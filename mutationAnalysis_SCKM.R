@@ -4,11 +4,13 @@
 
 library("BSgenome.Hsapiens.UCSC.hg38")
 library(deconstructSigs)
+library(ggplot2)
+library(reshape2)
 library(TCGAbiolinks)
 
 
 #### WD & LOAD FILES ####
-setwd("C:/Users/rockp/Desktop/UCL/Project")
+setwd("C:/Users/rockp/Desktop/UCL/Project/Project-Laura")
 
 load("./Data/TCGAmutations_SKCM.RData")             # Raw TCGA mutation data
 load("./Output/TCGAmutations_SKCM_snvs.RData")      # Selected SNVs
@@ -72,13 +74,33 @@ mut_sigs_pt <- as.data.frame(t(sapply(1:nrow(sigs_input_pt),
                                          signature.cutoff = 0.00,              # default = 0.06
                                          tri.counts.method = 'exome'))), 
                           row.names=rownames(sigs_input_pt))
+weights_pt <- as.data.frame(t(sapply(1:nrow(sigs_input_pt), 
+                                    function(x) whichSignatures(tumor.ref = sigs_input_pt,
+                                                                signatures.ref = signatures.cosmic,
+                                                                sample.id = rownames(sigs_input_pt[x,]), 
+                                                                contexts.needed = TRUE,
+                                                                signature.cutoff = 0.00,              # default = 0.06
+                                                                tri.counts.method = 'exome')$weights)), 
+                           row.names=rownames(sigs_input_pt))
+
 
 save(mut_sigs_pt, file="./Output/TCGAmutsigs_cut0.00_SKCM_PT.RData")
+save(weights_pt, file="./Output/TCGAweights_cut0.00_SKCM_PT.RData")
 
-# Pie chart test (single sample)
-pdf("./Figure/mutsig_SKCM_sample3_pt_pie.pdf")
-makePie(mut_sigs_pt[3,], sub="TCGA SKCM PT")
-dev.off()
+# Plotting 
+weights_pt$row <- seq_len(nrow(weights_pt))
+weights_pt2 <- melt(weights_pt, id.vars = "row")
+
+ggplot(weights_pt2, aes(x=variable, y=value, fill=row)) + 
+    geom_bar(stat="identity") +
+    xlab("\nType") +
+    ylab("Time\n") +
+    guides(fill=FALSE) +
+    theme_bw()
+
+
+barplot(weights)
+
 
 
 
@@ -106,6 +128,8 @@ mut_sigs_tm <- as.data.frame(t(sapply(1:nrow(sigs_input_tm),
                           row.names=rownames(sigs_input_tm))
 
 save(mut_sigs_tm, file="./Output/TCGAmutsigs_cut0.00_SKCM_TM.RData")
+
+
 
 # Pie chart test (single sample)
 pdf("./Figure/mutsig_SKCM_sample3_tm_pie.pdf")
