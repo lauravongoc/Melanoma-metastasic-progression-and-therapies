@@ -66,14 +66,15 @@ save(sigs_input_pt, file="./Output/mutsig_input_SKCM_PT.RData")
 
 
 # Signatures for all samples
-mut_sigs_pt <- as.data.frame(t(sapply(1:nrow(sigs_input_pt), 
-                                   function(x) whichSignatures(tumor.ref = sigs_input_pt,
-                                         signatures.ref = signatures.cosmic,
-                                         sample.id = rownames(sigs_input_pt[x,]), 
-                                         contexts.needed = TRUE,
-                                         signature.cutoff = 0.00,              # default = 0.06
-                                         tri.counts.method = 'exome'))), 
-                          row.names=rownames(sigs_input_pt))
+#mut_sigs_pt <- as.data.frame(t(sapply(1:nrow(sigs_input_pt), 
+ #                                  function(x) whichSignatures(tumor.ref = sigs_input_pt,
+  #                                       signatures.ref = signatures.cosmic,
+   #                                      sample.id = rownames(sigs_input_pt[x,]), 
+    #                                     contexts.needed = TRUE,
+     #                                    signature.cutoff = 0.00,              # default = 0.06
+      #                                   tri.counts.method = 'exome'))), 
+       #                   row.names=rownames(sigs_input_pt))
+
 weights_pt <- as.data.frame(t(sapply(1:nrow(sigs_input_pt), 
                                     function(x) whichSignatures(tumor.ref = sigs_input_pt,
                                                                 signatures.ref = signatures.cosmic,
@@ -83,23 +84,34 @@ weights_pt <- as.data.frame(t(sapply(1:nrow(sigs_input_pt),
                                                                 tri.counts.method = 'exome')$weights)), 
                            row.names=rownames(sigs_input_pt))
 
+weights <- sapply(weights_pt, function(x) unlist(x))
+weights <- weights[,-31]
+
+rownames(weights) <- rownames(weights_pt)
 
 save(mut_sigs_pt, file="./Output/TCGAmutsigs_cut0.00_SKCM_PT.RData")
 save(weights_pt, file="./Output/TCGAweights_cut0.00_SKCM_PT.RData")
 
-# Plotting 
-weights_pt$row <- seq_len(nrow(weights_pt))
-weights_pt2 <- melt(weights_pt, id.vars = "row")
 
-ggplot(weights_pt2, aes(x=variable, y=value, fill=row)) + 
+# Reformatting the weights data 
+melted <- melt(weights)
+colnames(melted) <- c("PatientId", "Signature", "weight")
+melted$weight <- sapply(melted$weight, function(x) 100*x)
+
+
+# Plot: stacked barplot signatures
+pdf("./Figures/TCGAmutsig_SCKM_PT.pdf", w=10, h=6)
+ggplot(melted, aes(x=PatientId, y=weight, fill=Signature)) + 
     geom_bar(stat="identity") +
-    xlab("\nType") +
-    ylab("Time\n") +
-    guides(fill=FALSE) +
-    theme_bw()
+    ggtitle("Mutational signature analysis SCKM primary tumor ") +
+    xlab("Sample") +
+    ylab("Contribution (%)") +
+    theme(axis.text.x = element_blank(), 
+          axis.ticks.x = element_blank()) #+
+    #geom_text(label=paste0(melted$weight,"%"))
+dev.off()
+    
 
-
-barplot(weights)
 
 
 
@@ -118,6 +130,9 @@ save(sigs_input_tm, file="./Output/mutsig_input_SKCM_TM.RData")
 
 
 # Signatures for all samples
+
+## sapply(rownames(), function(x) sample.id = x)
+
 mut_sigs_tm <- as.data.frame(t(sapply(1:nrow(sigs_input_tm), 
                                    function(x) whichSignatures(tumor.ref = sigs_input_tm,
                                                                signatures.ref = signatures.cosmic,
@@ -135,3 +150,6 @@ save(mut_sigs_tm, file="./Output/TCGAmutsigs_cut0.00_SKCM_TM.RData")
 pdf("./Figure/mutsig_SKCM_sample3_tm_pie.pdf")
 makePie(mut_sigs_tm[3,], sub="TCGA SKCM TM")
 dev.off()
+
+
+
