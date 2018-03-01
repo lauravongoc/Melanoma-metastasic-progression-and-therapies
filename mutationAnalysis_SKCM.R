@@ -1,0 +1,221 @@
+# Mutational Analysis - SKCM Cancer
+# DT Laura Vo Ngoc
+# Start: 18/02/2018
+
+library("BSgenome.Hsapiens.UCSC.hg38")
+library(deconstructSigs)
+library(ggplot2)
+library(pheatmap)
+library(RColorBrewer)
+library(reshape2)
+library(TCGAbiolinks)
+
+
+#### WD & LOAD FILES ####
+setwd("C:/Users/rockp/Desktop/UCL/Project/Project-Laura")
+
+load("./Data/TCGA_SKCM_mutations.RData")             # Raw TCGA mutation data
+load("./Output/TCGA_SKCM_snvs.RData")      # Selected SNVs
+
+# Primary tumor
+load("./Output/TCGA_SKCM_PT_mutsig_input.RData")            # Mutation analysis input
+load("./Output/TCGA_SKCM_PT_weights_cut0.00.RData")     # Mutational signatures output
+
+# Metastatic tumor
+load("./Output/TCGA_SKCM_TM_mutsig_input.RData")            # Mutation analysis input
+load("./Output/TCGA_SKCM_TM_weights_cut0.00.RData")     # Mutational signatures output
+
+
+#**********************************************************************************************************************
+#### DATA OF INTEREST ####
+
+# Download TCGA mutations for SKCM cancer:
+mutations <- GDCquery_Maf("SKCM", pipelines = "mutect2")
+save(mutations, file="./Data/TCGA_SKCM_mutations.RData")
+
+# Select columns of interest
+snvs <- data.frame(mutations[,c("Tumor_Sample_Barcode","Hugo_Symbol",
+                                "Chromosome","Start_Position","End_Position",
+                                "Variant_Classification","Variant_Type",
+                                "Reference_Allele","Tumor_Seq_Allele1",
+                                "Tumor_Seq_Allele2")])
+snvs$Sample_Type <- snvs$Tumor_Sample_Barcode
+
+# only interested in point mutations, not small insertions/deletions:
+snvs <- snvs[which((snvs$Tumor_Seq_Allele2 %in% 
+                        c("A","C","G","T"))&
+                       (snvs$Reference_Allele %in%
+                            c("A","C","G","T"))),]
+
+# Extract primary tumor samples ### 01 = primary tumor, 06 = metastatic
+snvs$Sample_Type <- sapply(snvs$Sample_Type, function(x) strsplit(x,"-")[[1]][4])
+snvs$Sample_Type <- sapply(snvs$Sample_Type, function(x) strsplit(x, "(?=[A-Za-z])(?<=[0-9])|(?=[0-9])(?<=[A-Za-z])", perl=TRUE)[[1]][1])
+
+# Save
+save(snvs, file="./Output/TCGA_SKCM_snvs.RData")
+
+# Stores each type into separate variables
+snvs_pt <- snvs[which(snvs$Sample_Type == "01"),]           # 61990 samples
+snvs_met <- snvs[which(snvs$Sample_Type == "06"),]          # 326634 samples
+
+
+#**********************************************************************************************************************
+#### MUTATIONAL SIGNATURES ANALYSIS -- PT ####
+
+# Convert to deconstructSigs input:
+sigs_input_pt <- mut.to.sigs.input(mut.ref = snvs_pt, 
+                                sample.id = "Tumor_Sample_Barcode", 
+                                chr = "Chromosome", 
+                                pos = "Start_Position", 
+                                ref = "Reference_Allele", 
+                                alt = "Tumor_Seq_Allele2",
+                                bsg = BSgenome.Hsapiens.UCSC.hg38)
+
+save(sigs_input_pt, file="./Output/TCGA_SKCM_PT_mutsig_input.RData")
+
+
+# Signatures
+weights_pt <- as.data.frame(t(sapply(rownames(sigs_input_pt), 
+                                    function(x) whichSignatures(tumor.ref = sigs_input_pt,
+                                                                signatures.ref = signatures.cosmic,
+                                                                sample.id = x, 
+                                                                contexts.needed = TRUE,
+                                                                signature.cutoff = 0.00,              # default = 0.06
+                                                                tri.counts.method = 'exome')$weights)), 
+                           row.names=rownames(sigs_input_pt))
+
+weight_pt <- as.data.frame(sapply(weights_pt, function(x) unlist(x)), row.names = rownames(weights_pt))
+
+# Change Signature.# to S#
+colnames(weight_pt) <- sapply(colnames(weight_pt), function(x) paste0("S",strsplit(x, "\\.")[[1]][2]))
+
+# Add unknown contribution column
+weight_pt$unknown <- (1-rowSums(weight_pt))
+
+# Sort by S1 (descending)
+sorted_pt <- weight_pt[order(-weight_pt$S1),]
+
+
+save(weight_pt, file="./Output/TCGA_SKCM_PT_weights_cut0.00.RData")
+
+
+# Reformatting the weights data 
+weight_pt <- as.matrix(weight_pt)
+melted_pt <- melt(weight_pt)
+colnames(melted_pt) <- c("PatientId", "Signature", "weight")
+melted_pt$weight <- sapply(melted_pt$weight, function(x) 100*x)
+
+
+# Remove non-contributing signatures
+sorted_pt <- as.matrix(sorted_pt)
+trim_pt <- sorted_pt[,which(colSums(sorted_pt)>0)]
+melt_pt <- melt(trim_pt)
+colnames(melt_pt) <- c("PatientId", "Signature", "weight")
+melt_pt$weight <- sapply(melt_pt$weight, function(x) 100*x)
+
+
+# Plot: stacked barplot signatures
+colors <- c(brewer.pal(12, "Paired"), brewer.pal(11, "Set3"),"#000000")
+pdf("./Figures/TCGA_SKCM_PT_mutsig.pdf", w=10, h=6)
+ggplot(melt_pt, aes(x=PatientId, y=weight, fill=Signature)) + 
+    scale_fill_manual(values=colors) +
+    geom_bar(stat="identity") +
+    ggtitle("Mutational signature analysis SCKM primary tumor ") +
+    xlab("Sample") +
+    ylab("Contribution (%)") +
+    theme(axis.text.x = element_blank(), 
+          axis.ticks.x = element_blank())
+    #geom_text(label=sprintf("%0.2f",round(melt$weight, digits = 2), aes(angle = 90)))
+dev.off()
+    
+# Plot: boxplot signatures
+ggplot(melt_pt, aes(x=Signature, y=weight)) +
+    geom_boxplot() +
+    ggtitle("Mutational signature analysis SCKM primary tumor") +
+    xlab("Signatures") +
+    ylab("Contribution")
+
+# Plot: heatmap
+melted_pt$weight <- as.numeric(melted_pt$weight)
+pt_mat <- acast(PatientId~Signature,data=melted_pt, value="weight", fun.aggregate=mean)
+p_pt <- pheatmap(t(pt_mat), show_colnames = FALSE, main="Mutational signatures SKCM primary tumor")
+
+#**********************************************************************************************************************
+#### MUTATIONAL SIGNATURES ANALYSIS -- TM ####
+
+# Convert to deconstructSigs input:
+sigs_input_tm <- mut.to.sigs.input(mut.ref = snvs_met, 
+                                sample.id = "Tumor_Sample_Barcode", 
+                                chr = "Chromosome", 
+                                pos = "Start_Position", 
+                                ref = "Reference_Allele", 
+                                alt = "Tumor_Seq_Allele2",
+                                bsg = BSgenome.Hsapiens.UCSC.hg38)
+
+save(sigs_input_tm, file="./Output/TCGA_SKCM_TM_mutsig_input.RData")
+
+
+# Signatures
+weights_tm <- as.data.frame(t(sapply(rownames(sigs_input_tm), 
+                                     function(x) whichSignatures(tumor.ref = sigs_input_tm,
+                                                                 signatures.ref = signatures.cosmic,
+                                                                 sample.id = x, 
+                                                                 contexts.needed = TRUE,
+                                                                 signature.cutoff = 0.00,              # default = 0.06
+                                                                 tri.counts.method = 'exome')$weights)), 
+                            row.names=rownames(sigs_input_tm))
+
+weight_tm <- as.data.frame(sapply(weights_tm, function(x) unlist(x)), row.names = rownames(weights_tm))
+
+# Change Signature.# to S#
+colnames(weight_tm) <- sapply(colnames(weight_tm), function(x) paste0("S",strsplit(x, "\\.")[[1]][2]))
+
+# Add unknown contribution column
+weight_tm$unknown <- (1-rowSums(weight_tm))
+
+# Sort by S1 (descending)
+sorted_tm <- weight_tm[order(-weight_tm$S1),]
+
+
+save(weight_tm, file="./Output/TCGA_SKCM_TM_weights_cut0.00.RData")
+
+
+# Reformatting the weights data 
+weight_tm <- as.matrix(weight_tm)
+melted_tm <- melt(weight_tm)
+colnames(melted_tm) <- c("PatientId", "Signature", "weight")
+melted_tm$weight <- sapply(melted_tm$weight, function(x) 100*x)
+
+
+# Remove non-contributing signatures
+sorted_tm <- as.matrix(sorted_tm)
+trim_tm <- sorted_tm[,which(colSums(sorted_tm)>0)]
+melt_tm <- melt(trim_tm)
+colnames(melt_tm) <- c("PatientId", "Signature", "weight")
+melt_tm$weight <- sapply(melt_tm$weight, function(x) 100*x)
+
+
+# Plot: stacked barplot signatures
+pdf("./Figures/TCGA_SKCM_TM_mutsig.pdf", w=10, h=6)
+ggplot(melt_tm, aes(x=PatientId, y=weight, fill=Signature)) + 
+    #scale_fill_manual(values=colors) +
+    geom_bar(stat="identity") +
+    ggtitle("Mutational signature analysis SCKM metastatic tumor ") +
+    xlab("Sample") +
+    ylab("Contribution (%)") +
+    theme(axis.text.x = element_blank(), 
+          axis.ticks.x = element_blank())
+#geom_text(label=sprintf("%0.2f",round(melt$weight, digits = 2), aes(angle = 90)))
+dev.off()
+
+# Plot: boxplot signatures
+ggplot(melt_tm, aes(x=Signature, y=weight)) +
+    geom_boxplot() +
+    ggtitle("Mutational signature analysis SCKM metastatic tumor") +
+    xlab("Signatures") +
+    ylab("Contribution")
+
+# Plot: heatmap
+melted_tm$weight <- as.numeric(melted_tm$weight)
+tm_mat <- acast(PatientId~Signature, data=melted_tm, value="weight", fun.aggregate=mean)
+p_tm <- pheatmap(t(tm_mat), show_colnames = FALSE, main="Mutational signatures SKCM metastatic tumor")
