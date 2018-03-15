@@ -161,3 +161,52 @@ ggplot(means, aes(x=reorder(Signatures, -value), y=value)) +
 dev.off()
 
 save(means, file="./Output/TCGA_UVM_PT_mutsigs_means.RData")
+
+#**********************************************************************************************************************
+#### CLINICAL DATA ####
+
+load("./Data/TCGA_UCM_clinical.RData")
+
+# Download data:
+UVM.clin = Samples.Clinical(format = "csv",
+                           cohort = "UVM",
+                           page_size=2000)
+save(SKCM.clin, file="./Data/TCGA_UVM_clinical.RData")
+
+# Create variables with both clinical and signatures data
+clin <- merge(UVM.clin, pt, by="patient_id")                #### creat pt variable for UVM!!!
+
+
+#### Stage ####
+
+# Get just id, cancer stage, and sigs
+stage <- clin[, c(1:2, 15, 97:120)]
+stage$stage <- sapply(stage$clinical_stage, function(x) toupper(strsplit(x,"\\ ")[[1]][2]))
+
+# Loop to remove a, b, c specifications of cancer stage
+for (i in 1:nrow(pt.stage)) {
+    if (grepl("a", pt.stage$stage[i], ignore.case = TRUE) | grepl("b", pt.stage$stage[i], ignore.case = TRUE) | 
+        grepl("c", pt.stage$stage[i], ignore.case = TRUE)) {
+        pt.stage$stage[i] <- substr(pt.stage$stage[i], 1, nchar(pt.stage$stage[i])-1)
+    }
+    else {
+        pt.stage$stage[i] <- pt.stage$stage[i]
+    }
+}
+
+
+
+
+#### Therapies ####
+# Get list of annotated therapies
+therapies.uvm <- array()
+for (i in 1:ncol(UVM.clin)) {
+    if (grepl("therapy", colnames(UVM.clin[i])) | grepl("treatment", colnames(UVM.clin[i])) | grepl("drug", colnames(UVM.clin)[i])) {
+        therapies.uvm <- append(therapies.uvm, colnames(UVM.clin[i]))
+    }
+}
+
+# Summary
+table(UVM.clin$therapy_type, useNA="always")
+table(UVM.clin$radiation_therapy, useNA="always")
+table(UVM.clin$drug_name, useNA="always")
