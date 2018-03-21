@@ -184,13 +184,13 @@ stage <- clin[, c(1:2, 15, 97:120)]
 stage$stage <- sapply(stage$clinical_stage, function(x) toupper(strsplit(x,"\\ ")[[1]][2]))
 
 # Loop to remove a, b, c specifications of cancer stage
-for (i in 1:nrow(pt.stage)) {
-    if (grepl("a", pt.stage$stage[i], ignore.case = TRUE) | grepl("b", pt.stage$stage[i], ignore.case = TRUE) | 
-        grepl("c", pt.stage$stage[i], ignore.case = TRUE)) {
-        pt.stage$stage[i] <- substr(pt.stage$stage[i], 1, nchar(pt.stage$stage[i])-1)
+for (i in 1:nrow(stage)) {
+    if (grepl("a", stage$stage[i], ignore.case = TRUE) | grepl("b", stage$stage[i], ignore.case = TRUE) | 
+        grepl("c", stage$stage[i], ignore.case = TRUE)) {
+        stage$stage[i] <- substr(stage$stage[i], 1, nchar(stage$stage[i])-1)
     }
     else {
-        pt.stage$stage[i] <- pt.stage$stage[i]
+        stage$stage[i] <- stage$stage[i]
     }
 }
 
