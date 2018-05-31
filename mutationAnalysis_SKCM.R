@@ -26,6 +26,7 @@ load("./Output/TCGA_SKCM_TM_mutsig_input.RData")            # Mutation analysis 
 load("./Output/TCGA_SKCM_TM_weights_cut0.00.RData")     # Mutational signatures output
 
 
+order <- c("S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13","S14","S15","S16","S17","S18","S19","S20","S21","S22","S23","S24","S25","S26","S27","S28","S29","S30","unknown")
 
 
 #---------  DATA OF INTEREST ------------------------------------------------------------------------------------------
@@ -425,11 +426,10 @@ merged[is.na(merged)] <- 0
 
 # Ordered by signature number
 order <- c(colnames(weight.tp))
-merged <- merged[match(order,merged$Signatures),]
 
 melt.merged <- melt(merged)
 colnames(melt.merged) <- c("Signatures", "Sample", "value")
-
+melt.merged$Signatures <- factor(melt.merged$Signatures, levels=order)
 
 colors3 <- brewer.pal(3, "Paired")
 pdf("./Figures/TCGA_SKCM_UVM_mutsigs_avg.pdf", w=13, h=6)
@@ -440,7 +440,7 @@ ggplot(melt.merged, aes(x=Signatures, y=value)) +
     xlab("Signatures") +
     ylab("Mean contribution (%)") +
     scale_y_continuous(breaks=seq(0,100,5)) +
-    coord_cartesian(ylim=c(0,100), expand=FALSE)
+    coord_cartesian(ylim=c(0,75), expand=FALSE)
 dev.off()
 
 
@@ -584,7 +584,7 @@ ggplot(tp.stagep.mean, aes(x=Signatures, y=weight)) +
     scale_fill_manual(values=colors4) +
     geom_bar(stat="identity", aes(fill=Progression), position="dodge") +
     ggtitle("Mean mutational signature contributions SKCM TP by disease progression") +
-    xlab("Signaturtes") +
+    xlab("Signatures") +
     ylab("Mean contribution (%)") +
     scale_y_continuous(breaks=seq(0,100,5)) +
     coord_cartesian(ylim=c(0,75), expand = FALSE)
@@ -732,6 +732,43 @@ tp.stage4.anova <- aov(weight~Signature,  data=tp.stage4.melt)
 summary(tp.stage4.anova)
 
 
+#--------- ~~T/N/M Stage TP -------
+tp.tnm <- tp.clin[, c(1:2, 45,46,48, 71:101)]
+tp.tnm$t <- tp.tnm$pathologic_t
+tp.tnm$n <- tp.tnm$pathologic_n
+tp.tnm$m <- tp.tnm$pathologic_m
+
+
+# Loop to remove a, b, c specifications of tnm stage
+for (i in 1:nrow(tp.tnm)) {
+    if (grepl("a", tp.tnm$t[i], ignore.case = TRUE) | grepl("b", tp.tnm$t[i], ignore.case = TRUE) | 
+        grepl("c", tp.tnm$t[i], ignore.case = TRUE)) {
+        tp.tnm$t[i] <- substr(tp.tnm$t[i], 1, nchar(tp.tnm$t[i])-1)
+    }
+    else {
+        tp.tnm$t[i] <- tp.tnm$t[i]
+    }
+}
+for (i in 1:nrow(tp.tnm)) {
+    if (grepl("a", tp.tnm$n[i], ignore.case = TRUE) | grepl("b", tp.tnm$n[i], ignore.case = TRUE) | 
+        grepl("c", tp.tnm$n[i], ignore.case = TRUE)) {
+        tp.tnm$n[i] <- substr(tp.tnm$n[i], 1, nchar(tp.tnm$n[i])-1)
+    }
+    else {
+        tp.tnm$n[i] <- tp.tnm$n[i]
+    }
+}
+for (i in 1:nrow(tp.tnm)) {
+    if (grepl("a", tp.tnm$m[i], ignore.case = TRUE) | grepl("b", tp.tnm$m[i], ignore.case = TRUE) | 
+        grepl("c", tp.tnm$m[i], ignore.case = TRUE)) {
+        tp.tnm$m[i] <- substr(tp.tnm$m[i], 1, nchar(tp.tnm$m[i])-1)
+    }
+    else {
+        tp.tnm$m[i] <- tp.tnm$m[i]
+    }
+}
+
+
 
 #--------- ~ Stage TM ---------
 
@@ -877,8 +914,48 @@ tm.prog.ttest$padj <- p.adjust(tm.prog.ttest$pval, method="BH")
 write.csv(tm.prog.ttest, file="./Output/TCGA_SKCM_TM_prog_eachsigttest.csv")
 
 
+#--------- ~~T/N/M Stage TM -------
+tm.tnm <- tm.clin[, c(1:2, 45,46,48, 71:101)]
+tm.tnm$t <- tm.tnm$pathologic_t
+tm.tnm$n <- tm.tnm$pathologic_n
+tm.tnm$m <- tm.tnm$pathologic_m
+
+
+# Loop to remove a, b, c specifications of tnm stage
+for (i in 1:nrow(tm.tnm)) {
+    if (grepl("a", tm.tnm$t[i], ignore.case = TRUE) | grepl("b", tm.tnm$t[i], ignore.case = TRUE) | 
+        grepl("c", tm.tnm$t[i], ignore.case = TRUE)) {
+        tm.tnm$t[i] <- substr(tm.tnm$t[i], 1, nchar(tm.tnm$t[i])-1)
+    }
+    else {
+        tm.tnm$t[i] <- tm.tnm$t[i]
+    }
+}
+for (i in 1:nrow(tm.tnm)) {
+    if (grepl("a", tm.tnm$n[i], ignore.case = TRUE) | grepl("b", tm.tnm$n[i], ignore.case = TRUE) | 
+        grepl("c", tm.tnm$n[i], ignore.case = TRUE)) {
+        tm.tnm$n[i] <- substr(tm.tnm$n[i], 1, nchar(tm.tnm$n[i])-1)
+    }
+    else {
+        tm.tnm$n[i] <- tm.tnm$n[i]
+    }
+}
+for (i in 1:nrow(tm.tnm)) {
+    if (grepl("a", tm.tnm$m[i], ignore.case = TRUE) | grepl("b", tm.tnm$m[i], ignore.case = TRUE) | 
+        grepl("c", tm.tnm$m[i], ignore.case = TRUE)) {
+        tm.tnm$m[i] <- substr(tm.tnm$m[i], 1, nchar(tm.tnm$m[i])-1)
+    }
+    else {
+        tm.tnm$m[i] <- tm.tnm$m[i]
+    }
+}
+
+
 
 #--------- ~ Therapies ---------
+
+load("./Output/TCGA_SKCM_TP_therapies.RData")
+load("./Output/TCGA_SKCM_TM_therapies.RData")
 
 # Get list of annotated therapies
 therapies <- array()
@@ -890,28 +967,177 @@ for (i in 1:ncol(SKCM.clin)) {
 therapies
 
 # Summary
-table(tp.clin$prior_systemic_therapy_type, useNA="always")
+table(tp.clin$prior_systemic_therapy_type, useNA="always") # immunotherapy/vaccine, interferon, NA
 table(tp.clin$radiation_therapy, useNA="always")
 table(tp.clin$history_of_neoadjuvant_treatment, useNA="always")         # chemo after surgery
 
-table(tm.clin$prior_systemic_therapy_type, useNA="always")
+table(tm.clin$prior_systemic_therapy_type, useNA="always") # immunotherapy/vaccine, interferon, chemo, other, NA
 table(tm.clin$radiation_therapy, useNA="always")
 table(tm.clin$history_of_neoadjuvant_treatment, useNA="always")
 
+
+#--------- ~~ TP Therapies ---------
+
+# Get just id, cancer stage, and sigs
+tp.ther <- tp.clin[, c(1:2, 29, 54, 57, 71:101)]
+save(tp.ther, file="./Output/TCGA_SKCM_TP_therapies.RData")
+
 # Therapy subgroups
+tp.radiation <- tp.ther[which(tp.clin$radiation_therapy=="yes"),]
+tp.interferon <- tp.ther[which(tp.clin$prior_systemic_therapy_type=="interferon"),]
+
+tp.ther.matched <- merge(tp.radiation, tp.interferon, by="patient_id")       # 1 sample
+
+ 
+
+#--------- ~~ TM Therapies ---------
+
+# Get just id, cancer stage, and sigs
+tm.ther <- tm.clin[, c(1:2, 29, 54, 57, 71:101)]
+save(tm.ther, file="./Output/TCGA_SKCM_TM_therapies.RData")
+
+# Therapy subgroups
+tm.radiation <- tm.ther[which(tm.clin$radiation_therapy=="yes"),]
+tm.interferon <- tm.ther[which(tm.clin$prior_systemic_therapy_type=="interferon"),]
+
+tm.ther.matched <- merge(tm.radiation, tm.interferon, by="patient_id")       # 5 samples
+
+
+## Overview
+tm.radiation.melt <- melt(tm.radiation[,c(2,6:36)])
+colnames(tm.radiation.melt) <- c("PatientId", "Signatures", "weight")
+tm.radiation.melt$weight <- sapply(tm.radiation.melt$weight, function(x) 100*x)
+
+tm.interferon.melt <- melt(tm.interferon[,c(2,6:36)])
+colnames(tm.interferon.melt) <- c("PatientId", "Signatures", "weight")
+tm.interferon.melt$weight <- sapply(tm.interferon.melt$weight, function(x) 100*x)
+
+# Plot: boxplot signatures per therapy
+pdf("./Figures/TCGA_SKCM_TM_mutsigs_radiation_boxplot.pdf", w=13, h=6)
+ggplot(tm.radiation.melt, aes(x=Signatures, y=weight)) +
+    geom_boxplot() +
+    ggtitle("Mutational signature analysis SKCM TM radiation therapy") +
+    xlab("Signatures") +
+    ylab("Contribution") +
+    coord_cartesian(ylim=c(0,100), expand=FALSE)
+dev.off()
+
+pdf("./Figures/TCGA_SKCM_TM_mutsigs_interferon_boxplot.pdf", w=13, h=6)
+ggplot(tm.interferon.melt, aes(x=Signatures, y=weight)) +
+    geom_boxplot() +
+    ggtitle("Mutational signature analysis SKCM TM interferon therapy") +
+    xlab("Signatures") +
+    ylab("Contribution") +
+    coord_cartesian(ylim=c(0,100), expand=FALSE)
+dev.off()
+
+
+# ANOVA for each therapy
+tm.radiation.anova <- aov(weight~Signatures,  data=tm.radiation.melt)
+summary(tm.radiation.anova)
+
+tm.interferon.anova <- aov(weight~Signatures,  data=tm.interferon.melt)
+summary(tm.interferon.anova)
+
+
+# ttest by pair of signatures per therapy
+# radiation
+tm.radiation.t <- tm.radiation[,6:36]
+#tm.radiation.t.df <- data.frame(matrix(NA, nrow=31, ncol=31), row.names=noquote(order))
+#colnames(tm.radiation.t.df) <- noquote(order)
+tm.radiation.tdf <- data.frame(sig1=NA, sig2=NA, pval=NA)
+
+k <- 1
+for (i in 1:(ncol(tm.radiation.t)-1)) {
+    for (j in (i+1):ncol(tm.radiation.t)) {
+        #tm.radiation.t.df[i,j] <- t.test(tm.radiation.t[,i], tm.radiation.t[,j])$p.value
+        tm.radiation.tdf[k,1] <- colnames(tm.radiation.t)[i]
+        tm.radiation.tdf[k,2] <- colnames(tm.radiation.t)[j]
+        tm.radiation.tdf[k,3] <- t.test(tm.radiation.t[,i], tm.radiation.t[,j])$p.value
+        k <- k+1
+    }
+}
+tm.radiation.tdf$padj <- p.adjust(tm.radiation.tdf$pval, method="BH")
+tm.radiation.tdf$sign <- sapply(tm.radiation.tdf$padj, function(x) ifelse(x<0.05, "*", ""))
+write.csv(tm.radiation.tdf, file="./Output/TCGA_SKCM_TM_radiation_eachsigttest.csv")
+
+# interferon
+tm.interferon.t <- tm.interferon[,6:36]
+tm.interferon.tdf <- data.frame(sig1=NA, sig2=NA, pval=NA)
+
+k <- 1
+for (i in 1:(ncol(tm.interferon.t)-1)) {
+    for (j in (i+1):ncol(tm.interferon.t)) {
+        tm.interferon.tdf[k,1] <- colnames(tm.interferon.t)[i]
+        tm.interferon.tdf[k,2] <- colnames(tm.interferon.t)[j]
+        tm.interferon.tdf[k,3] <- t.test(tm.interferon.t[,i], tm.interferon.t[,j])$p.value
+        k <- k+1
+    }
+}
+tm.interferon.tdf$padj <- p.adjust(tm.interferon.tdf$pval, method="BH")
+tm.interferon.tdf$sign <- sapply(tm.interferon.tdf$padj, function(x) ifelse(x<0.05, "*", ""))
+write.csv(tm.interferon.tdf, file="./Output/TCGA_SKCM_TM_interferon_eachsigttest.csv")
 
 
 
 
+# Mean sig contribution per therapy
+radiation.meanvar <- tm.radiation[,c(6:36)]
+rownames(radiation.meanvar) <- tm.radiation[,2]
+means.tm.radiation <- data.frame( Signatures=c(colnames(radiation.meanvar)), value=c(colMeans(radiation.meanvar)*100), Therapy="radiation")
+
+interferon.meanvar <- tm.interferon[,c(6:36)]
+rownames(interferon.meanvar) <- tm.interferon[,2]
+means.tm.interferon <- data.frame(Signatures=c(colnames(interferon.meanvar)), value=c(colMeans(interferon.meanvar)*100), Therapy="interferon")
+
+tm.ther.means <- rbind(means.tm.radiation, means.tm.interferon)
+
+tm.ther.means$Signatures <- factor(tm.ther.means$Signatures, levels=order)
+
+# Plot barplot
+pdf("./Figures/TCGA_SKCM_TM_mutsigs_therapies_avgbarplot.pdf", w=13, h=6)
+ggplot(tm.ther.means, aes(x=Signatures, y=value)) + 
+    scale_fill_manual(values=colors6) +
+    geom_bar(stat="identity", aes(fill=Therapy), position="dodge") +
+    ggtitle("Mean mutational signature contributions SKCM TM by therapy") +
+    xlab("Signatures") +
+    ylab("Mean contribution (%)") +
+    scale_y_continuous(breaks=seq(0,100,5)) +
+    coord_cartesian(ylim=c(0,75), expand = FALSE)
+dev.off()
 
 
-### TO ASK
-# Therapy annotations:  interferon 90 day prior excision admin indicator -- immunotherapy before surgery
-#                       history of neoadjuvant treatment (either no or NA)
-#                               = chemo after surgery
-
-
-
-
-# cancer stage barplot: use avg --> complementary to boxplot sigs analysis
+# Loop over each signature, by therapy
+# Data frame for t-test output
+tm.ther.ttest <- data.frame(Signature=colnames(tm.ther)[6:36], t=NA, df=NA, pval = NA)
+for (i in 6:36) {
+    sig <- noquote(colnames(tm.ther[i]))
+    #var <- na.omit(data.frame(Therapy=tm.stage$earlyLate, weight=tm.stage[,i]))
+    title <- paste0("SKCM TM ", sig, " contribution by therapy")
+    file <- paste0("./Figures/TCGA_SKCM_TM_ther_", sig, ".pdf")
+    
+    radiation <- na.omit(data.frame(Therapy="radiation", weight=tm.radiation[,i]))
+    interferon <- na.omit(data.frame(Therapy="interferon", weight=tm.interferon[,i]))
+    var <- rbind(radiation, interferon)
+    ttest <- t.test(radiation$weight, interferon$weight)
+    
+    tm.ther.ttest[which(tm.ther.ttest$Signature==sig),2] <- ttest$statistic
+    tm.ther.ttest[which(tm.ther.ttest$Signature==sig),3] <- ttest$parameter
+    tm.ther.ttest[which(tm.ther.ttest$Signature==sig),4] <- ttest$p.value
+    #tm.ther.ttest[which(tm.ther.ttest$Signature==sig),5] <- ttest$conf.int
+    #tm.ther.ttest[which(tm.ther.ttest$Signature==sig),6] <- ttest$estimate
+    
+    pdf(file, w=7, h=5)
+    plot <- ggplot(var, aes(x=Therapy, y=weight*100)) +
+        #geom_bar(stat="identity", fill="blue") +
+        geom_boxplot() +
+        ggtitle(title) +
+        xlab("Therapy") +
+        ylab("Contribution (%)") +
+        coord_cartesian(ylim=c(0,100), expand = FALSE)
+    print(plot) 
+    dev.off()
+}
+tm.ther.ttest$padj <- p.adjust(tm.prog.ttest$pval, method="BH")
+write.csv(tm.ther.ttest, file="./Output/TCGA_SKCM_TM_ther_eachsigttest.csv")
 

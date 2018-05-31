@@ -166,7 +166,8 @@ save(means, file="./Output/TCGA_UVM_TP_mutsigs_means.RData")
 #**********************************************************************************************************************
 #### CLINICAL DATA ####
 
-load("./Data/TCGA_UCM_clinical.RData")
+load("./Data/TCGA_UVM_clinical.RData")
+load("./Output/TCGA_UVM_TP_clinical.RData")
 load("./Output/TCGA_UVM_TP_stage.RData")
 
 # Mutsigs data frame with patient id column
@@ -178,10 +179,12 @@ tp_uvm$patient_id <- sapply(rownames(tp_uvm), function(x) as.factor(tolower(strs
 UVM.clin = Samples.Clinical(format = "csv",
                            cohort = "UVM",
                            page_size=2000)
-save(SKCM.clin, file="./Data/TCGA_UVM_clinical.RData")
+save(UVM.clin, file="./Data/TCGA_UVM_clinical.RData")
 
 # Create variables with both clinical and signatures data
 clin <- merge(UVM.clin, tp_uvm, by="patient_id")
+
+write.csv(clin, file="./Output/TCGA_UVM_TP_clinical.RData")
 
 
 #### ~ Stage ####
@@ -318,7 +321,42 @@ prog.ttest$padj <- p.adjust(prog.ttest$pval, method="BH")
 
 write.csv(prog.ttest, file="./Output/TCGA_UVM_TP_prog_eachsigttest.csv")
 
+#--------- ~~T/N/M Stage TP -------
+tnm <- clin[, c(1:2, 13, 14, 16, 97:127)]
+tnm$t <- tnm$clinical_t
+tnm$n <- tnm$clinical_n
+tnm$m <- tnm$clinical_m
 
+
+# Loop to remove a, b, c specifications of tnm stage
+for (i in 1:nrow(tnm)) {
+    if (grepl("a", tnm$t[i], ignore.case = TRUE) | grepl("b", tnm$t[i], ignore.case = TRUE) | 
+        grepl("c", tnm$t[i], ignore.case = TRUE) | grepl("d", tnm$t[i], ignore.case = TRUE) | 
+        grepl("e", tnm$t[i], ignore.case = TRUE)) {
+        tnm$t[i] <- substr(tnm$t[i], 1, nchar(tnm$t[i])-1)
+    }
+    else {
+        tnm$t[i] <- tnm$t[i]
+    }
+}
+for (i in 1:nrow(tnm)) {
+    if (grepl("a", tnm$n[i], ignore.case = TRUE) | grepl("b", tnm$n[i], ignore.case = TRUE) | 
+        grepl("c", tnm$n[i], ignore.case = TRUE)) {
+        tnm$n[i] <- substr(tnm$n[i], 1, nchar(tnm$n[i])-1)
+    }
+    else {
+        tnm$n[i] <- tnm$n[i]
+    }
+}
+for (i in 1:nrow(tnm)) {
+    if (grepl("a", tnm$m[i], ignore.case = TRUE) | grepl("b", tnm$m[i], ignore.case = TRUE) | 
+        grepl("c", tnm$m[i], ignore.case = TRUE)) {
+        tnm$m[i] <- substr(tnm$m[i], 1, nchar(tnm$m[i])-1)
+    }
+    else {
+        tnm$m[i] <- tnm$m[i]
+    }
+}
 
 #### ~ Therapies ####
 # Get list of annotated therapies
@@ -328,6 +366,7 @@ for (i in 1:ncol(UVM.clin)) {
         therapies.uvm <- append(therapies.uvm, colnames(UVM.clin[i]))
     }
 }
+therapies.uvm
 
 # Summary
 table(UVM.clin$therapy_type, useNA="always")
