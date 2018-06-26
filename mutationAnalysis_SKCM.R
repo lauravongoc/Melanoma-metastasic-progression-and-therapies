@@ -63,7 +63,6 @@ snvs.tm <- snvs[which(snvs$Sample_Type == "06"),]          # 326634 samples
 
 
 
-
 #--------- MUTATIONAL SIGNATURES ANALYSIS: TP -------------------------------------------------------------------------
 
 # Convert to deconstructSigs input:
@@ -391,7 +390,7 @@ tm.domsigs <- as.data.frame(table(tm.max$maxSig))
 domsig <- merge(tp.domsigs, tm.domsigs, by="Var1", all=TRUE)
 domsig[is.na(domsig)] <- 0
 colnames(domsig) <- c("Signature", "SKCM_TP", "SKCM_TM")
-domsig <- domsig[match(c("S1","S2","S3","S4","S6","S7","S11","S15","S17","S18","S19","S20","S21","S26","S30"),domsig$Signature),]
+domsig <- domsig[match(c("S1","S2","S3","S4","S6","S7","S 11","S15","S17","S18","S19","S20","S21","S26","S30"),domsig$Signature),]
 
 # Generates contingency tables and runs Fisher's exact test --> outputs into data frame
 fisher <- data.frame(Signature=domsig$Signature, OR=NA, pval=NA, padj=NA)
@@ -456,6 +455,11 @@ load('./Output/TCGA_SKCM_TM_clinical.RData')
 SKCM.clin = Samples.Clinical(format = "csv",
                            cohort = "SKCM",
                            page_size=2000)
+save(SKCM.clin, file="./Data/TCGA_SKCM_clinical.RData")
+
+SARC.clin = Samples.Clinical(format = "csv",
+                             cohort = "SARC",
+                             page_size=2000)
 save(SKCM.clin, file="./Data/TCGA_SKCM_clinical.RData")
 
 # Create variables with both clinical and signatures data
@@ -965,6 +969,14 @@ for (i in 1:ncol(SKCM.clin)) {
     }
 }
 therapies
+
+therapy <- array()
+for (i in 1:ncol(SARC.clin)) {
+    if (grepl("therapy", colnames(SARC.clin[i])) | grepl("treatment", colnames(SARC.clin[i])) | grepl("drug", colnames(SARC.clin[i]))) {
+        therapy <- append(therapy, colnames(SARC.clin[i]))
+    }
+}
+therapy
 
 # Summary
 table(tp.clin$prior_systemic_therapy_type, useNA="always") # immunotherapy/vaccine, interferon, NA

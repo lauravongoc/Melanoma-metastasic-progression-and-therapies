@@ -171,7 +171,7 @@ load("./Output/TCGA_UVM_TP_clinical.RData")
 load("./Output/TCGA_UVM_TP_stage.RData")
 
 # Mutsigs data frame with patient id column
-tp_uvm <- as.data.frame(weight_tp[,which(colSums(weight.tp)>0)])
+tp_uvm <- as.data.frame(weight_tp[,which(colSums(weight_tp)>0)])
 tp_uvm$patient_id <- sapply(rownames(tp_uvm), function(x) as.factor(tolower(strsplit(x,"-")[[1]][3])))
 
 
@@ -184,7 +184,7 @@ save(UVM.clin, file="./Data/TCGA_UVM_clinical.RData")
 # Create variables with both clinical and signatures data
 clin <- merge(UVM.clin, tp_uvm, by="patient_id")
 
-write.csv(clin, file="./Output/TCGA_UVM_TP_clinical.RData")
+save(clin, file="./Output/TCGA_UVM_TP_clinical.RData")
 
 
 #### ~ Stage ####
