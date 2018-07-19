@@ -8,6 +8,7 @@ library(ggplot2)
 library(pheatmap)
 library(RColorBrewer)
 library(reshape2)
+library(survival)
 library(TCGAbiolinks)
 require(FirebrowseR)
 
@@ -43,7 +44,7 @@ snvs <- data.frame(mutations[,c("Tumor_Sample_Barcode","Hugo_Symbol",
                                 "Tumor_Seq_Allele2")])
 snvs$Sample_Type <- snvs$Tumor_Sample_Barcode
 
-# only interested in point mutations, not small insertions/deletions:
+# Only interested in point mutations, not small insertions/deletions:
 snvs <- snvs[which((snvs$Tumor_Seq_Allele2 %in% 
                         c("A","C","G","T"))&
                        (snvs$Reference_Allele %in%
@@ -1152,4 +1153,3 @@ for (i in 6:36) {
 }
 tm.ther.ttest$padj <- p.adjust(tm.prog.ttest$pval, method="BH")
 write.csv(tm.ther.ttest, file="./Output/TCGA_SKCM_TM_ther_eachsigttest.csv")
-

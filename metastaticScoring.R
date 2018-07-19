@@ -12,6 +12,13 @@ require(FirebrowseR)
 #--------- WD & LOAD FILES --------------------------------------------------------------------------------------------
 setwd("C:/Users/rockp/Desktop/UCL/Project/Project-Laura")
 
+load("./Data/TCGA_SKCM_mutations.RData")            # Raw TCGA mutation data
+load("./Output/TCGA_SKCM_snvs.RData")               # Selected SNVs
+
+# Primary tumor
+load("./Output/TCGA_SKCM_TP_mutsig_input.RData")            # Mutation analysis input
+load("./Output/TCGA_SKCM_TP_weights_cut0.00.RData")     # Mutational signatures output
+
 # Mutational signatures and clinical data
 load("./Output/TCGA_SKCM_TP_clinical.RData")    # SKCM TP
 load('./Output/TCGA_SKCM_TM_clinical.RData')    # SKCM TM
@@ -42,6 +49,9 @@ load("./Output/TCGA_SKCM_TP_metastatic_score_stage.RData")  # SKCM TP
 load("./Output/TCGA_SKCM_TM_metastatic_score_stage.RData")  # SKCM TM
 load("./Output/TCGA_UVM_TP_metastatic_score_mel.RData")     # UVM TP
 
+# Total mutsig mutations
+load("./Output/TCGA_SKCM_TP_totalmutsigs.RData")
+load("./Output/TCGA_SKCM_TM_totalmutsigs.RData")
 
 #--------- COLORS --------------------------------------------------------------------------------------------
 colors <- c(brewer.pal(12, "Paired"), brewer.pal(11, "Set3"),"#000000")
@@ -77,7 +87,7 @@ genes2 <- c("AMDHD2", "BRCA1", "CDK1", "CCNB1", "CCNB2", "CCNE1", "CCNE2", "CDC2
            "SMC4", "SPC25", "UAP1", "UBE2C", "UBE2D", "UBE2S", "UBE2W")
 
     # UVM genes OneNote
-genes_uvm <- c("HTR2B","ECM1","RAB31","CDH1","FXR1","LTA4H","EIF1B","ID2","ROBO1","LMCD1","SATB1","MTUS1","PRAME")
+genes_uvm <- c("HTR2B","ECM1","RAB31","CDH1","PRAME","FXR1","LTA4H","EIF1B","ID2","ROBO1","LMCD1","SATB1","MTUS1")
 
 tp.skcm.expr.cbp <- Samples.mRNASeq(format = "csv",
                            gene = genes_cbp,
@@ -284,8 +294,8 @@ save(genelist.down, file="./Output/TCGA_SKCM_metastatic_genelist_downreg.RData")
 
 
 #--------- METASTATIC SCORE ----------------------------------------------------------------------------------------
-uvm.genelist.up <- c("HTR2B", "ECM1", "RAB31", "CDH1")
-uvm.genelist.down <- c("FXR1","LTA4H","EIF1B","ID2","ROBO1","LMCD1","SATB1","MTUS1","PRAME")
+uvm.genelist.up <- c("HTR2B", "ECM1", "RAB31", "CDH1","PRAME")
+uvm.genelist.down <- c("FXR1","LTA4H","EIF1B","ID2","ROBO1","LMCD1","SATB1","MTUS1")
 
 
 # Order matrix by upreg then downreg
@@ -304,7 +314,7 @@ tm.skcm.metscore <- data.frame(tcga_participant_barcode=noquote(rownames(tm.skcm
                                                       na.rm=TRUE)))
 uvm.metscore <- data.frame(tcga_participant_barcode=noquote(rownames(mat.uvm.expr)),
                            cohort="UVM TP",
-                           metscore=(rowMeans(uvm.genelist.expr[,1:4]/rowMeans(tm.skcm.genelist.expr[,5:13]),  
+                           metscore=(rowMeans(uvm.genelist.expr[,1:5]/rowMeans(uvm.genelist.expr[,6:13]),  
                                                    na.rm=TRUE)))
 
 save(tp.skcm.metscore, file="./Output/TCGA_SKCM_TP_metastatic_score_mel.RData")
@@ -312,25 +322,26 @@ save(tm.skcm.metscore, file="./Output/TCGA_SKCM_TM_metastatic_score_mel.RData")
 save(uvm.metscore, file="./Output/TCGA_UVM_TP_metastatic_score_mel.RData")
 
 # Overlapping histogram of metscore distributions
-pdf("./Figures/TCGA_SKCM_UVM_metscore_hist.pdf", w=8, h=6)
+pdf("./Figures/TCGA_SKCM_UVM_metscore_hist_small.pdf", w=8, h=6)
 hist(tm.skcm.metscore$metscore, 
-     col="#1F78B4B3", 
+     col="#1F78B4B3",  
      main="Metastatic score distribution", 
      xlab="Metastatic score",
-     xlim=c(0.5,1.8),
+     xlim=c(0.4,1.8),
      ylim=c(0,100))
 hist(tp.skcm.metscore$metscore, 
      col="#fb9a99B3", 
      main="Metastatic score distribution SKCM TP", 
      xlab="Metastatic score",
-     xlim=c(0.5,1.8),
+     xlim=c(0.4,1.8),
      ylim=c(0,100),
      add=TRUE)
 hist(uvm.metscore$metscore,
      col="#B2DF8AB3", 
      main="Metastatic score distribution UVM TP", 
      xlab="Metastatic score",
-     xlim=c(0.5,1.8),
+     breaks=14,
+     xlim=c(0.4,1.8),
      ylim=c(0,100),
      add=TRUE)
 legend("topright", c("SKCM TP", "SKCM TM", "UVM TP"), col=c("#fb9a99B3","#1F78B4B3", "#B2DF8AB3"), lwd=10)
@@ -346,6 +357,9 @@ tp.skcm.metscore$met_potential <- ifelse(tp.skcm.metscore$metscore > 1, "high", 
 
 tm.skcm.metscore$met_potential <- NA
 tm.skcm.metscore$met_potential <- ifelse(tm.skcm.metscore$metscore > 1, "high", "low")
+
+uvm.metscore$met_potential <- NA
+uvm.metscore$met_potential <- ifelse(uvm.metscore$metscore > 1, "high", "low")
 
 # High vs. Low by quantiles
 tp.skcm.metscore$met_potential_quant <- NA
@@ -374,7 +388,7 @@ for (i in 1:nrow(tm.skcm.metscore)) {
     }
 }
 
-# Create table of low vs high potential counts with early or late disease progression
+# Create table of low vs high potential counts with early or late disease progression SKCM
 earlyLate_hilow <- data.frame(data=c("early","late"), low=NA, high=NA)
 rownames(earlyLate_hilow) <- earlyLate_hilow[,1] 
 earlyLate_hilow <- earlyLate_hilow[,-1]
@@ -387,24 +401,21 @@ earlyLate_hilow[2,1] <- nrow(tp.skcm.metscore.stage[which(tp.skcm.metscore.stage
 earlyLate_hilow[2,2] <- nrow(tp.skcm.metscore.stage[which(tp.skcm.metscore.stage$earlyLate == "late" & tp.skcm.metscore.stage$met_potential == "high"),]) + 
     nrow(tm.skcm.metscore.stage[which(tm.skcm.metscore.stage$earlyLate == "late" & tm.skcm.metscore.stage$met_potential == "high"),])
 
-# Fisher's exact test
+# Fisher's exact test SKCM
 fisher.test(earlyLate_hilow)
 
-# Create table of low vs high potential counts with early or late disease progression
-earlyLate_hiLow2 <- data.frame(data=c("early","late"), low=NA, high=NA)
-rownames(earlyLate_hiLow2) <- earlyLate_hiLow2[,1] 
-earlyLate_hiLow2 <- earlyLate_hiLow2[,-1]
-earlyLate_hiLow2[1,1] <- nrow(tp.skcm.metscore.stage[which(tp.skcm.metscore.stage$earlyLate == "early" & tp.skcm.metscore.stage$met_potential_quant == "low"),]) + 
-    nrow(tm.skcm.metscore.stage[which(tm.skcm.metscore.stage$earlyLate == "early" & tm.skcm.metscore.stage$met_potential_quant == "low"),])
-earlyLate_hiLow2[1,2] <- nrow(tp.skcm.metscore.stage[which(tp.skcm.metscore.stage$earlyLate == "early" & tp.skcm.metscore.stage$met_potential_quant == "high"),]) + 
-    nrow(tm.skcm.metscore.stage[which(tm.skcm.metscore.stage$earlyLate == "early" & tm.skcm.metscore.stage$met_potential_quant == "high"),])
-earlyLate_hiLow2[2,1] <- nrow(tp.skcm.metscore.stage[which(tp.skcm.metscore.stage$earlyLate == "late" & tp.skcm.metscore.stage$met_potential_quant == "low"),]) + 
-    nrow(tm.skcm.metscore.stage[which(tm.skcm.metscore.stage$earlyLate == "late" & tm.skcm.metscore.stage$met_potential_quant == "low"),])
-earlyLate_hiLow2[2,2] <- nrow(tp.skcm.metscore.stage[which(tp.skcm.metscore.stage$earlyLate == "late" & tp.skcm.metscore.stage$met_potential_quant == "high"),]) + 
-    nrow(tm.skcm.metscore.stage[which(tm.skcm.metscore.stage$earlyLate == "late" & tm.skcm.metscore.stage$met_potential_quant == "high"),])
+# Create table of low vs high potential counts with early or late disease progression UVM
+uvm_earlyLate_hilow <- data.frame(data=c("early","late"), low=NA, high=NA)
+rownames(uvm_earlyLate_hilow) <- uvm_earlyLate_hilow[,1] 
+uvm_earlyLate_hilow <- uvm_earlyLate_hilow[,-1]
+uvm_earlyLate_hilow[1,1] <- nrow(uvm.metscore.stage[which(uvm.metscore.stage$earlyLate == "early" & uvm.metscore.stage$met_potential == "low"),])
+uvm_earlyLate_hilow[1,2] <- nrow(uvm.metscore.stage[which(uvm.metscore.stage$earlyLate == "early" & uvm.metscore.stage$met_potential == "high"),])
+uvm_earlyLate_hilow[2,1] <- nrow(uvm.metscore.stage[which(uvm.metscore.stage$earlyLate == "late" & uvm.metscore.stage$met_potential == "low"),])
+uvm_earlyLate_hilow[2,2] <- nrow(uvm.metscore.stage[which(uvm.metscore.stage$earlyLate == "late" & uvm.metscore.stage$met_potential == "high"),])
 
-# Fisher's exact test
-fisher.test(earlyLate_hiLow2)
+# Fisher's exact test UVM
+fisher.test(uvm_earlyLate_hilow)
+
 
 # low (0-0.8), med (0.8-1), high(>1)
 tp.skcm.metscore$met_potential_med <- NA
@@ -448,18 +459,19 @@ compare
 
 #--------- CLINICAL DATA ----------------------------------------------------------------------------------------
 
-#--------- ~ Stage ---------
+#--------- ~ Metscore vs. stage ---------
 tp.skcm.metscore.stage <- merge(tp.stage, tp.skcm.metscore, by="tcga_participant_barcode")
 tm.skcm.metscore.stage <- merge(tm.stage, tm.skcm.metscore, by="tcga_participant_barcode")
-#uvm.metscore.stage <- merge(stage, uvm.metscore, by="tcga_participant_barcode")
+uvm.metscore.stage <- merge(stage, uvm.metscore, by="tcga_participant_barcode")
 
 save(tp.skcm.metscore.stage, file="./Output/TCGA_SKCM_TP_metastatic_score_stage.RData")
 save(tm.skcm.metscore.stage, file="./Output/TCGA_SKCM_TM_metastatic_score_stage.RData")
+save(uvm.metscore.stage, file="./Output/TCGA_UVM_TP_metastatic_score_stage.RData")
 
 # remove stage NA
 tp.skcm.metscore.stage <- tp.skcm.metscore.stage[!is.na(tp.skcm.metscore.stage$stage),]            # 4 NA removed
 tm.skcm.metscore.stage <- tm.skcm.metscore.stage[!is.na(tm.skcm.metscore.stage$stage),]            # 34 NA removed
-#uvm.metscore.stage <- uvm.metscore.stage[!is.na(uvm.metscore.stage$stage),]                 # 0 NA removed
+uvm.metscore.stage <- uvm.metscore.stage[!is.na(uvm.metscore.stage$stage),]                 # 0 NA removed
 
 
 # Boxplot by stage
@@ -556,7 +568,7 @@ t.test(uvm.metscore.stage.early$met_score, uvm.metscore.stage.late$met_score)
 
 
 
-#--------- ~ Met potential stage ---------
+#--------- ~ Met potential vs. stage ---------
 
 tp.skcm.metpotential.low <- tp.skcm.metscore.stage[which(tp.skcm.metscore.stage$met_potential=="low"),c(1,35,36,38,39)]
 melt.tp.skcm.metpotential.low <- melt(tp.skcm.metpotential.low)
@@ -648,4 +660,318 @@ summary(tm.skcm.metpotential.low.anova)
 tm.skcm.metpotential.high.anova <- aov(metscore~stage,  data=tm.skcm.metpotential.high)
 summary(tm.skcm.metpotential.high.anova)
 
+
+# UVM
+uvm.metpotential.low <- uvm.metscore.stage[which(uvm.metscore.stage$met_potential=="low"),c(1,35,36,38,39)]
+melt.uvm.metpotential.low <- melt(uvm.metpotential.low)
+colnames(melt.uvm.metpotential.low) <- c("Sample", "Stage", "earlyLate", "Potential", "variable", "value")
+
+uvm.metpotential.high <- uvm.metscore.stage[which(uvm.metscore.stage$met_potential=="high"),c(1,35,36,38,39)]
+melt.uvm.metpotential.high <- melt(uvm.metpotential.high)
+colnames(melt.uvm.metpotential.high) <- c("Sample", "Stage", "earlyLate", "Potential", "variable", "value")
+
+pdf("./Figures/TCGA_UVM_TP_metpotential_low_stage.pdf", w=6, h=6)
+ggplot(melt.uvm.metpotential.low, aes(x=Stage, y=value)) + 
+    scale_fill_manual(values=colors3) +
+    geom_boxplot() +
+    ggtitle("Low metastatic potential UVM TP by stage") +
+    xlab("Stage") +
+    ylab("Metastatic score") +
+    scale_y_continuous(breaks=seq(0,100,0.1)) +
+    coord_cartesian(ylim=c(0,1), expand=FALSE)
+dev.off()
+
+pdf("./Figures/TCGA_UVM_TP_metpotential_high_stage.pdf", w=6, h=6)
+ggplot(melt.uvm.metpotential.high, aes(x=Stage, y=value)) + 
+    scale_fill_manual(values=colors3) +
+    geom_boxplot() +
+    ggtitle("High metastatic potential SKCM TP by stage") +
+    xlab("Stage") +
+    ylab("Metastatic score") +
+    scale_y_continuous(breaks=seq(0,100,0.1)) +
+    coord_cartesian(ylim=c(1,1.4), expand=FALSE)
+dev.off()
+
+# Anova
+uvm.metpotential.low.anova <- aov(metscore~stage,  data=uvm.metpotential.low)
+summary(uvm.metpotential.low.anova)
+
+uvm.metpotential.high.anova <- aov(metscore~stage,  data=uvm.metpotential.high)
+summary(uvm.metpotential.high.anova)
+
+
+#--------- TOTAL MUTATIONS CONTRIBUTION ------------------------------------------------------------------------------------
+
+# Total number of mutations per sample
+skcm.total.muts <- as.data.frame(table(snvs$Tumor_Sample_Barcode))
+colnames(skcm.total.muts) <- c("tcga_participant_barcode","Total_Muts")
+skcm.total.muts[,1] <- sapply(skcm.total.muts$tcga_participant_barcode, function(x) substr(x, 1, 12))
+
+tp.skcm.total.muts <- merge(tp.skcm.metscore.stage, skcm.total.muts, by="tcga_participant_barcode", all=TRUE)
+tp.skcm.total.muts <- tp.skcm.total.muts[!is.na(tp.skcm.total.muts$patient_id),c(-2,-3,-37,-40,-41)]
+
+# Replace signature % contribution columns with total mutation contributions (% sig contribution * total muts)
+for (i in 2:32) {
+    tp.skcm.total.muts[,i] <- tp.skcm.total.muts[,i]*tp.skcm.total.muts[,37]
+}
+
+save(tp.skcm.total.muts, file="./Output/TCGA_SKCM_TP_totalmutsigs.RData")
+
+tm.skcm.total.muts <- merge(tm.skcm.metscore.stage, skcm.total.muts, by="tcga_participant_barcode", all=TRUE)
+tm.skcm.total.muts <- tm.skcm.total.muts[!is.na(tm.skcm.total.muts$patient_id),c(-2,-3,-37,-40,-41)]
+
+# Replace signature % contribution columns with total mutation contributions (% sig contribution * total muts)
+for (i in 2:32) {
+    tm.skcm.total.muts[,i] <- tm.skcm.total.muts[,i]*tm.skcm.total.muts[,37]
+}
+
+save(tm.skcm.total.muts, file="./Output/TCGA_SKCM_TM_totalmutsigs.RData")
+
+# S1
+s1 <- tp.skcm.total.muts[,c(1:2,35,36)]
+quantile(s1$S1)
+cor.test(s1$S1, s1$metscore)
+
+pdf("./Figures/TCGA_SKCM_TP_metscore_S1_scatter.pdf", w=8, h=6)
+ggplot(s1, aes(x=S1, y=metscore)) +
+    geom_point(shape=1) + 
+    geom_smooth(method=lm) + 
+    ggtitle("SKCM TP total S1 mutation contribution vs. metastatic score") +
+    xlab("Total mutations contributed by S1") +
+    ylab("Metastatic score") +
+    scale_x_continuous(breaks=seq(0,200,10)) +
+    scale_y_continuous(breaks=seq(0,10,0.2)) +
+    coord_cartesian(xlim=c(0,137.7), ylim=c(0.6,1.5), expand=FALSE)+
+    annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
+dev.off()
+
+s1$met_potential <- factor(s1$met_potential, levels = c("low","high"),ordered = TRUE)
+
+pdf("./Figures/TCGA_SKCM_TP_metpotential_S1_boxplot.pdf", w=6, h=6)
+ggplot(s1, aes(x=met_potential, y=S1)) +
+    geom_boxplot() +
+    ggtitle("SKCM TP total S1 mutation contribution vs. metastatic potential") +
+    xlab("Metastatic potential") +
+    ylab("Total mutations contributed by S1") +
+    scale_y_continuous(breaks=seq(0,200,10)) +
+    coord_cartesian(ylim=c(0,140), expand=FALSE)
+    #annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
+dev.off()
+
+
+# S7, 1 outlier removed
+s7 <- tp.skcm.total.muts[,c(1,8,35,36)]
+s7 <- s7[which(s7$S7<4000),]
+quantile(s7$S7)
+cor.test(s7$S7, s7$metscore)
+
+pdf("./Figures/TCGA_SKCM_TP_metscore_S7_scatter.pdf", w=8, h=6)
+ggplot(s7, aes(x=S7, y=metscore)) +
+    geom_point(shape=1) + 
+    geom_smooth(method=lm) + 
+    ggtitle("SKCM TP total S7 mutation contribution vs. metastatic score") +
+    xlab("Total mutations contributed by S7") +
+    ylab("Metastatic score") +
+    theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+    scale_x_continuous(breaks=seq(0,10000,100)) +
+    scale_y_continuous(breaks=seq(0,10,0.2)) +
+    coord_cartesian(xlim=c(0,2575), ylim=c(0.6,1.5), expand=FALSE)+
+    annotate("text", x=2300, y=c(1.47, 1.44), label = c("Correlation: 0.140416", "p-value: 0.1701"))
+dev.off()
+
+s7$met_potential <- factor(s7$met_potential, levels = c("low","high"),ordered = TRUE)
+
+pdf("./Figures/TCGA_SKCM_TP_metpotential_S7_boxplot.pdf", w=6, h=6)
+ggplot(s7, aes(x=met_potential, y=S7)) +
+    geom_boxplot() +
+    ggtitle("SKCM TP total S7 mutation contribution vs. metastatic potential") +
+    xlab("Metastatic potential") +
+    ylab("Total mutations contributed by S7") +
+    scale_y_continuous(breaks=seq(0,10000,100)) +
+    coord_cartesian(ylim=c(0,2600), expand=FALSE)
+#annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
+dev.off()
+
+# S11, 1 outlier removed
+s11 <- tp.skcm.total.muts[,c(1,12,35,36)]
+s11 <- s11[which(s11$S11<250),]
+quantile(s11$S11)
+cor.test(s11$S11, s11$metscore)
+
+pdf("./Figures/TCGA_SKCM_TP_metscore_S11_scatter.pdf", w=8, h=6)
+ggplot(s11, aes(x=S11, y=metscore)) +
+    geom_point(shape=1) + 
+    geom_smooth(method=lm) + 
+    ggtitle("SKCM TP total S11 mutation contribution vs. metastatic score") +
+    xlab("Total mutations contributed by S11") +
+    ylab("Metastatic score") +
+    scale_x_continuous(breaks=seq(0,300,10)) +
+    scale_y_continuous(breaks=seq(0,10,0.2)) +
+    coord_cartesian(xlim=c(0,96), ylim=c(0.6,1.5), expand=FALSE)+
+    annotate("text", x=83, y=c(1.47, 1.44), label = c("Correlation: -0.06027398", "p-value: 0.5576"))
+dev.off()
+
+s11$met_potential <- factor(s11$met_potential, levels = c("low","high"),ordered = TRUE)
+
+pdf("./Figures/TCGA_SKCM_TP_metpotential_S11_boxplot.pdf", w=6, h=6)
+ggplot(s11, aes(x=met_potential, y=S11)) +
+    geom_boxplot() +
+    ggtitle("SKCM TP total S11 mutation contribution vs. metastatic potential") +
+    xlab("Metastatic potential") +
+    ylab("Total mutations contributed by S11") +
+    scale_y_continuous(breaks=seq(0,300,10)) +
+    coord_cartesian(ylim=c(0,100), expand=FALSE)
+#annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
+dev.off()
+
+
+# S23, 1 outlier removed
+s23 <- tp.skcm.total.muts[,c(1,24,35,36)]
+s23 <- s23[which(s23$S23<1400),]
+quantile(s23$S23)
+cor.test(s23$S23, s23$metscore)
+
+pdf("./Figures/TCGA_SKCM_TP_metscore_S23_scatter.pdf", w=8, h=6)
+ggplot(s23, aes(x=S23, y=metscore)) +
+    geom_point(shape=1) + 
+    geom_smooth(method=lm) + 
+    ggtitle("SKCM TP total S23 mutation contribution vs. metastatic score") +
+    xlab("Total mutations contributed by S23") +
+    ylab("Metastatic score") +
+    scale_x_continuous(breaks=seq(0,300,10)) +
+    scale_y_continuous(breaks=seq(0,10,0.2)) +
+    coord_cartesian(xlim=c(0,233.5), ylim=c(0.6,1.5), expand=FALSE)+
+    annotate("text", x=205, y=c(1.47, 1.44), label = c("Correlation: 0.08380639", "p-value: 0.4144"))
+dev.off()
+
+s23$met_potential <- factor(s23$met_potential, levels = c("low","high"),ordered = TRUE)
+
+pdf("./Figures/TCGA_SKCM_TP_metpotential_S23_boxplot.pdf", w=6, h=6)
+ggplot(s23, aes(x=met_potential, y=S23)) +
+    geom_boxplot() +
+    ggtitle("SKCM TP total S23 mutation contribution vs. metastatic potential") +
+    xlab("Metastatic potential") +
+    ylab("Total mutations contributed by S23") +
+    scale_y_continuous(breaks=seq(0,300,10)) +
+    coord_cartesian(ylim=c(0,235), expand=FALSE)
+#annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
+dev.off()
+
+
+# S6
+s6 <- tp.skcm.total.muts[,c(1,7,35,36)]
+quantile(s6$S6)
+cor.test(s6$S6, s6$metscore)
+
+pdf("./Figures/TCGA_SKCM_TP_metscore_S6_scatter.pdf", w=8, h=6)
+ggplot(s6, aes(x=S6, y=metscore)) +
+    geom_point(shape=1) + 
+    geom_smooth(method=lm) + 
+    ggtitle("SKCM TP total S6 mutation contribution vs. metastatic score") +
+    xlab("Total mutations contributed by S6") +
+    ylab("Metastatic score") +
+    scale_x_continuous(breaks=seq(0,300,10)) +
+    scale_y_continuous(breaks=seq(0,10,0.2)) +
+    coord_cartesian(xlim=c(0,72), ylim=c(0.6,1.5), expand=FALSE)+
+    annotate("text", x=62, y=c(1.47, 1.44), label = c("Correlation: -0.07751905", "p-value: 0.448"))
+dev.off()
+
+s6$met_potential <- factor(s6$met_potential, levels = c("low","high"),ordered = TRUE)
+
+pdf("./Figures/TCGA_SKCM_TP_metpotential_S6_boxplot.pdf", w=6, h=6)
+ggplot(s6, aes(x=met_potential, y=S6)) +
+    geom_boxplot() +
+    ggtitle("SKCM TP total S6 mutation contribution vs. metastatic potential") +
+    xlab("Metastatic potential") +
+    ylab("Total mutations contributed by S6") +
+    scale_y_continuous(breaks=seq(0,300,10)) +
+    coord_cartesian(ylim=c(0,75), expand=FALSE)
+#annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
+dev.off()
+
+
+# S7/S1 1 outlier removed
+s7.1 <- tp.skcm.total.muts[,c(1:2,8,35,36)]
+s7.1$S7.1 <- s7.1$S7/s7.1$S1
+s7.1 <- s7.1[which(s7.1$S7.1<500),]
+s7.1 <- s7.1[complete.cases(s7.1),] # remove NaN (1 sample)
+s7.1 <- s7.1[which(s7.1$S7.1 != Inf),] # remove Inf (11 samples)
+
+quantile(s7.1$S7.1, na.rm=TRUE)
+cor.test(s7.1$S7.1, s7.1$metscore)
+
+pdf("./Figures/TCGA_SKCM_TP_metscore_S7.1_scatter.pdf", w=8, h=6)
+ggplot(s7.1, aes(x=S7.1, y=metscore)) +
+    geom_point(shape=1) + 
+    geom_smooth(method=lm) + 
+    ggtitle("SKCM TP total mutation contribution S7/S1 vs. metastatic score") +
+    xlab("Total mutations contributed by S7/S1") +
+    ylab("Metastatic score") +
+    scale_x_continuous(breaks=seq(0,1000,10)) +
+    scale_y_continuous(breaks=seq(0,10,0.2)) +
+    coord_cartesian(xlim=c(0,205.3), ylim=c(0.6,1.5), expand=FALSE)+
+    annotate("text", x=180, y=c(1.47, 1.44), label = c("Correlation: 0.05790048 ", "p-value: 0.5986"))
+dev.off()
+
+s7.1$met_potential <- factor(s7.1$met_potential, levels = c("low","high"),ordered = TRUE)
+
+pdf("./Figures/TCGA_SKCM_TP_metpotential_S7.1_boxplot.pdf", w=6, h=6)
+ggplot(s7.1, aes(x=met_potential, y=S7.1)) +
+    geom_boxplot() +
+    ggtitle("SKCM TP total mutation contribution S7/S1 vs. metastatic potential") +
+    xlab("Metastatic potential") +
+    ylab("Total mutations contributed by S7/S1") +
+    scale_y_continuous(breaks=seq(0,200,10)) +
+    coord_cartesian(ylim=c(0,206), expand=FALSE)
+#annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
+dev.off()
+
+
+
+#--------- MATCHED NORMAL SAMPLES ------------------------------------------------------------------------------------------
+
+# Blood derived normal (NB), Solid tissue normal (NT), Buccal cell normal (NBC),
+# EBV immortalized normal (NEBV), Bone marrow normal (NBM)
+norm.skcm <- Samples.mRNASeq(format = "csv",
+                                 gene = order.updown,
+                                 cohort = "SKCM",
+                                 sample_type = c("NT"),
+                                 protocol = "RSEM",
+                                 page_size=6000
+)
+# 68 rows of NT samples, all with same participant barcode: TCGA-GN-A4U8 (matches a TM sample)
+
+
+#--------- METSITES ----------------------------------------------------------------------------------------------
+
+# Generate df of mutsig, metscore, metsite, and stage, SKCM TM
+tm.metsite <- merge(tm.clin[,c(2,23)], tm.skcm.metscore.stage[,c(1,4:36,38:39)], by="tcga_participant_barcode")
+
+# Group metastatic sites
+tm.metsite$metsite_group <- tm.metsite$distant_metastasis_anatomic_site
+
+for (i in 1:nrow(tm.metsite)) {
+    if (is.na(tm.metsite$metsite_group[i])) {
+        tm.metsite$metsite_group[i] <- NA
+    } else if (grepl("lymph", tm.metsite$metsite_group[i], ignore.case = TRUE)) {
+        tm.metsite$metsite_group[i] <- "lymph node"
+    } else if (grepl("skin", tm.metsite$metsite_group[i], ignore.case = TRUE)) {
+        tm.metsite$metsite_group[i] <- "skin"
+    } else if (grepl("brain", tm.metsite$metsite_group[i], ignore.case = TRUE)) {
+        tm.metsite$metsite_group[i] <- "brain"
+    } else if (grepl("lung", tm.metsite$metsite_group[i], ignore.case = TRUE)) {
+        tm.metsite$metsite_group[i] <- "lung"
+    } else if (grepl("soft tissue", tm.metsite$metsite_group[i], ignore.case = TRUE)) {
+        tm.metsite$metsite_group[i] <- "soft tissue"
+    } else if (grepl("bone", tm.metsite$metsite_group[i], ignore.case = TRUE) | grepl("skull", tm.metsite$metsite_group[i], ignore.case = TRUE)) {
+        tm.metsite$metsite_group[i] <- "bone"
+    } else if (grepl("abdomen", tm.metsite$metsite_group[i], ignore.case = TRUE) | grepl("colon", tm.metsite$metsite_group[i], ignore.case = TRUE) | 
+        grepl("duodenum", tm.metsite$metsite_group[i], ignore.case = TRUE) | grepl("jejunum", tm.metsite$metsite_group[i], ignore.case = TRUE) |
+        grepl("intestine", tm.metsite$metsite_group[i], ignore.case = TRUE) | grepl("bowel", tm.metsite$metsite_group[i], ignore.case = TRUE) ) {
+        tm.metsite$metsite_group[i] <- "GI tract"
+    }
+    else {
+        tm.metsite$metsite_group[i] <- "other"
+    }
+}
 
