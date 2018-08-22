@@ -1,0 +1,145 @@
+DDR,Process,Pathway 1,Pathway 2,Complex,Gene ID
+Repair pathway,SSR,BER,AP endonucleases,NA,APEX1
+Repair pathway,SSR,BER,AP endonucleases,NA,APEX2
+Repair pathway,SSR,BER,DNA glycosylases,NA,MBD4
+Repair pathway,SSR,BER,DNA glycosylases,NA,MPG
+Repair pathway,SSR,BER,DNA glycosylases,NA,MUTYH
+Repair pathway,SSR,BER,DNA glycosylases,NA,NEIL1
+Repair pathway,SSR,BER,DNA glycosylases,NA,NEIL2
+Repair pathway,SSR,BER,DNA glycosylases,NA,NEIL3
+Repair pathway,SSR,BER,DNA glycosylases,NA,NTHL1
+Repair pathway,SSR,BER,DNA glycosylases,NA,OGG1
+Repair pathway,SSR,BER,DNA glycosylases,NA,SMUG1
+Repair pathway,SSR,BER,DNA glycosylases,NA,TDG
+Repair pathway,SSR,BER,DNA glycosylases,NA,UNG
+Repair pathway,SSR,BER,LONG PATCH-BER factors,DNA polymerase delta,POLD1
+Repair pathway,SSR,BER,LONG PATCH-BER factors,DNA polymerase delta,POLD2
+Repair pathway,SSR,BER,LONG PATCH-BER factors,DNA polymerase delta,POLD3
+Repair pathway,SSR,BER,LONG PATCH-BER factors,DNA polymerase delta,POLD4
+Repair pathway,SSR,BER,LONG PATCH-BER factors,DNA polymerase epsilon complex,FEN1
+Repair pathway,SSR,BER,LONG PATCH-BER factors,DNA polymerase epsilon complex,LIG1
+Repair pathway,SSR,BER,LONG PATCH-BER factors,DNA polymerase epsilon complex,PCNA
+Repair pathway,SSR,BER,LONG PATCH-BER factors,NA,HUS1
+Repair pathway,SSR,BER,LONG PATCH-BER factors,NA,PCNA
+Repair pathway,SSR,BER,LONG PATCH-BER factors,NA,WRN
+Repair pathway,SSR,BER,Other BER factors,NA,ALKBH1
+Repair pathway,SSR,BER,Other BER factors,NA,APLF
+Repair pathway,SSR,BER,Other BER factors,NA,APTX
+Repair pathway,SSR,BER,Other BER factors,NA,GADD45A
+Repair pathway,SSR,BER,Other BER factors,NA,GADD45G
+Repair pathway,SSR,BER,Other BER factors,NA,HMGB1
+Repair pathway,SSR,BER,Other BER factors,NA,HMGB2
+Repair pathway,SSR,BER,Other BER factors,NA,PARG
+Repair pathway,SSR,BER,Other BER factors,NA,PARP1
+Repair pathway,SSR,BER,Other BER factors,NA,PARP2
+Repair pathway,SSR,BER,Other BER factors,NA,PARP3
+Repair pathway,SSR,BER,Other BER factors,NA,PARP4
+Repair pathway,SSR,BER,Other BER factors,NA,PNKP
+Repair pathway,SSR,BER,Other BER factors,NA,POLE
+Repair pathway,SSR,BER,Other BER factors,NA,POLH
+Repair pathway,SSR,BER,Other BER factors,NA,POLL
+Repair pathway,SSR,BER,Other BER factors,NA,TDP1
+Repair pathway,SSR,BER,SHORT PATCH-BER factors,NA,LIG3
+Repair pathway,SSR,BER,SHORT PATCH-BER factors,NA,POLB
+Repair pathway,SSR,BER,SHORT PATCH-BER factors,NA,XRCC1
+Repair pathway,SSR,MMR,DNA polymerase delta,DNA polymerase delta,POLD1
+Repair pathway,SSR,MMR,DNA polymerase delta,DNA polymerase delta,POLD2
+Repair pathway,SSR,MMR,DNA polymerase delta,DNA polymerase delta,POLD3
+Repair pathway,SSR,MMR,DNA polymerase delta,DNA polymerase delta,POLD4
+Repair pathway,SSR,MMR,Mismatch and loop recognition factors,NA,MSH2
+Repair pathway,SSR,MMR,Mismatch and loop recognition factors,NA,MSH3
+Repair pathway,SSR,MMR,Mismatch and loop recognition factors,NA,MSH6
+Repair pathway,SSR,MMR,MutL homologs,NA,MLH1
+Repair pathway,SSR,MMR,MutL homologs,NA,MLH3
+Repair pathway,SSR,MMR,MutL homologs,NA,PMS1
+Repair pathway,SSR,MMR,MutL homologs,NA,PMS2
+Repair pathway,SSR,MMR,MutS homologs specialized for meiosis,NA,MSH4
+Repair pathway,SSR,MMR,MutS homologs specialized for meiosis,NA,MSH5
+Repair pathway,SSR,MMR,Other MMR factors,NA,EXO1
+Repair pathway,SSR,MMR,Other MMR factors,NA,HMGB1
+Repair pathway,SSR,MMR,Other MMR factors,NA,HMGB1
+Repair pathway,SSR,MMR,Other MMR factors,NA,LIG1
+Repair pathway,SSR,MMR,Other MMR factors,NA,PCNA
+Repair pathway,SSR,MMR,RFC (replication factor C),replication factor C subunit 2/4,RFC2
+,,,,,
+Repair pathway,SSR,MMR,RFC (replication factor C),replication factor C subunit 2/5,RFC4
+,,,,,
+Repair pathway,SSR,MMR,RFC (replication factor C),replication factor C subunit 3/5,RFC3
+,,,,,
+Repair pathway,SSR,MMR,RFC (replication factor C),replication factor C subunit 3/5,RFC5
+,,,,,
+Repair pathway,SSR,MMR,RFC (replication factor C),NA,RFC1
+Repair pathway,SSR,MMR,RPA (replication factor A),NA,RPA1
+Repair pathway,SSR,MMR,RPA (replication factor A),NA,RPA2
+Repair pathway,SSR,MMR,RPA (replication factor A),NA,RPA3
+Repair pathway,SSR,MMR,RPA (replication factor A),NA,RPA4
+Repair pathway,SSR,NER,DNA polymerase delta,DNA polymerase delta,POLD1
+Repair pathway,SSR,NER,DNA polymerase delta,DNA polymerase delta,POLD2
+Repair pathway,SSR,NER,DNA polymerase delta,DNA polymerase delta,POLD3
+Repair pathway,SSR,NER,DNA polymerase delta,DNA polymerase delta,POLD4
+Repair pathway,SSR,NER,DNA polymerase delta,Proliferating Cell Nuclear Antigen,PCNA
+Repair pathway,SSR,NER,DNA polymerase delta,Replication factor C,RFC1
+Repair pathway,SSR,NER,DNA polymerase delta,Replication factor C,RFC2
+Repair pathway,SSR,NER,DNA polymerase delta,Replication factor C,RFC3
+Repair pathway,SSR,NER,DNA polymerase delta,Replication factor C,RFC4
+Repair pathway,SSR,NER,DNA polymerase delta,Replication factor C,RFC5
+Repair pathway,SSR,NER,DNA polymerase epsilon,DNA polymerase epsilon,POLE
+Repair pathway,SSR,NER,DNA polymerase epsilon,DNA polymerase epsilon,POLE2
+Repair pathway,SSR,NER,DNA polymerase epsilon,DNA polymerase epsilon,POLE3
+Repair pathway,SSR,NER,DNA polymerase epsilon,DNA polymerase epsilon,POLE4
+Repair pathway,SSR,NER,DNA polymerase kappa,DNA polymerase kappa,POLK
+Repair pathway,SSR,NER,GGR (Global genome repair),Cul4-CSA Complex,CUL4A
+Repair pathway,SSR,NER,GGR (Global genome repair),Cul4-CSA Complex,DDB1
+Repair pathway,SSR,NER,GGR (Global genome repair),Cul4-CSA Complex,DDB2
+Repair pathway,SSR,NER,GGR (Global genome repair),Cul4-CSA Complex,RBX1
+Repair pathway,SSR,NER,GGR (Global genome repair),Cul4-DDB2 complex,CUL4A
+Repair pathway,SSR,NER,GGR (Global genome repair),Cul4-DDB2 complex,DDB1
+Repair pathway,SSR,NER,GGR (Global genome repair),Cul4-DDB2 complex,DDB2
+Repair pathway,SSR,NER,GGR (Global genome repair),Cul4-DDB2 complex,RBX1
+Repair pathway,SSR,NER,GGR (Global genome repair),XPC-HR23B- CETN2,CETN2
+Repair pathway,SSR,NER,GGR (Global genome repair),XPC-HR23B- CETN2,RAD23B
+Repair pathway,SSR,NER,GGR (Global genome repair),XPC-HR23B- CETN2,XPC
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),DNA-directed RNA polymerase II complex,POLR2A
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),DNA-directed RNA polymerase II complex,POLR2B
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),DNA-directed RNA polymerase II complex,POLR2C
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),DNA-directed RNA polymerase II complex,POLR2D
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),DNA-directed RNA polymerase II complex,POLR2E
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),DNA-directed RNA polymerase II complex,POLR2F
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),DNA-directed RNA polymerase II complex,POLR2G
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),DNA-directed RNA polymerase II complex,POLR2H
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),DNA-directed RNA polymerase II complex,POLR2I
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),DNA-directed RNA polymerase II complex,POLR2J
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),DNA-directed RNA polymerase II complex,POLR2K
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),DNA-directed RNA polymerase II complex,POLR2L
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),Other TCR Factors,CUL3
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),Other TCR Factors,CUL5
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),Other TCR Factors,ERCC1
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),Other TCR Factors,ERCC4
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),Other TCR Factors,ERCC5
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),Other TCR Factors,LIG1
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),Other TCR Factors,TCEB1
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),Other TCR Factors,TCEB2
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),Other TCR Factors,TCEB3
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),Other TCR Factors,UVSSA
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),Other TCR Factors,XPA
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),RPA (replication factor A),RPA1
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),RPA (replication factor A),RPA2
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),RPA (replication factor A),RPA3
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),RPA (replication factor A),RPA4
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),TFIIH,CDK7
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),TFIIH,ERCC2
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),TFIIH,ERCC3
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),TFIIH,GTF2H1
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),TFIIH,GTF2H2
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),TFIIH,GTF2H3
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),TFIIH,GTF2H4
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),TFIIH,GTF2H5
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),TFIIH,MNAT1
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),NA,ERCC6
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),NA,ERCC8
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),NA,LIG3
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),NA,RAD23A
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),NA,XAB2
+Repair pathway,SSR,NER,TCR (Transcription coupled repair),NA,XRCC1
+Repair pathway,SSR,NER,NA,NA,GADD45A
+Repair pathway,SSR,NER,NA,NA,GADD45G
