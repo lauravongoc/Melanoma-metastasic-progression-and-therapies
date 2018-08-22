@@ -3,6 +3,7 @@
 # Start: 28/05/2018
 
 library(ggplot2)
+library(ggpubr)
 library(pheatmap)
 library(RColorBrewer)
 library(reshape2)
@@ -47,7 +48,7 @@ load("./Output/TCGA_UVM_TP_metastatic_score_mel.RData")   # UVM TP
 # Mutsigs, metscores, and stage
 load("./Output/TCGA_SKCM_TP_metastatic_score_stage.RData")  # SKCM TP
 load("./Output/TCGA_SKCM_TM_metastatic_score_stage.RData")  # SKCM TM
-load("./Output/TCGA_UVM_TP_metastatic_score_mel.RData")     # UVM TP
+load("./Output/TCGA_UVM_TP_metastatic_score_stage.RData")     # UVM TP
 
 # Total mutsig mutations
 load("./Output/TCGA_SKCM_TP_totalmutsigs.RData")
@@ -322,7 +323,7 @@ save(tm.skcm.metscore, file="./Output/TCGA_SKCM_TM_metastatic_score_mel.RData")
 save(uvm.metscore, file="./Output/TCGA_UVM_TP_metastatic_score_mel.RData")
 
 # Overlapping histogram of metscore distributions
-pdf("./Figures/TCGA_SKCM_UVM_metscore_hist_small.pdf", w=8, h=6)
+pdf("./Figures/TCGA_SKCM_UVM_metscore_hist_small_cutoff.pdf", w=8, h=6)
 hist(tm.skcm.metscore$metscore, 
      col="#1F78B4B3",  
      main="Metastatic score distribution", 
@@ -344,7 +345,8 @@ hist(uvm.metscore$metscore,
      xlim=c(0.4,1.8),
      ylim=c(0,100),
      add=TRUE)
-legend("topright", c("SKCM TP", "SKCM TM", "UVM TP"), col=c("#fb9a99B3","#1F78B4B3", "#B2DF8AB3"), lwd=10)
+legend("topright", c("SKCM TP", "SKCM TM", "UVM TP"), col=c("#fb9a99B3","#1F78B4B3", "#B2DF8AB3"), lwd=10, bty="n")
+abline(v=1, col="black", lty=2, lwd=2)
 dev.off()
 
 
@@ -475,96 +477,127 @@ uvm.metscore.stage <- uvm.metscore.stage[!is.na(uvm.metscore.stage$stage),]     
 
 
 # Boxplot by stage
-pdf("./Figures/TCGA_SKCM_TP_metscore_mel_stage_boxplot.pdf", w=10, h=6)
-ggplot(tp.skcm.metscore.stage, aes(x=stage, y=metscore, fill=stage)) + 
+tp.st <- ggplot(tp.skcm.metscore.stage, aes(x=stage, y=metscore, fill=stage)) + 
     scale_fill_manual(values=colors4) +
     geom_boxplot() +
-    ggtitle("Metastatic score SKCM TP by cancer stage") +
+    ggtitle("SKCM TP") +
     xlab("Cancer stage") +
-    ylab("Metastatic potential score") +
-    scale_y_continuous(breaks=seq(0,10,0.1)) +
-    coord_cartesian( ylim=c(0,2), expand = FALSE )
-dev.off()
+    ylab("Metastatic score") +
+    scale_y_continuous(breaks=seq(0,10,0.2)) +
+    coord_cartesian( ylim=c(0.4,1.8), expand = TRUE) +
+    theme_bw()+
+    theme(axis.title.x = element_blank(),
+          legend.position = "none",
+          plot.title = element_text(hjust = 0.5),
+          axis.text = element_text(size=12),
+          axis.title.y = element_text(size=13)) +
+    scale_x_discrete(labels=c("I\nn=2", "II\nn=66", "III\nn=28", "IV\nn=3"))
 
-pdf("./Figures/TCGA_SKCM_TM_metscore_mel_stage_boxplot.pdf", w=10, h=6)
-ggplot(tm.skcm.metscore.stage, aes(x=stage, y=metscore, fill=stage)) + 
+tm.st <- ggplot(tm.skcm.metscore.stage, aes(x=stage, y=metscore, fill=stage)) + 
     scale_fill_manual(values=colors4) +
     geom_boxplot() +
-    ggtitle("Metastatic score SKCM TM by cancer stage") +
+    ggtitle("SKCM TM") +
     xlab("Cancer stage") +
-    ylab("Metastatic potential score") +
-    scale_y_continuous(breaks=seq(0,10,0.1)) +
-    coord_cartesian( ylim=c(0,2), expand = FALSE )
-dev.off()
+    ylab("Metastatic score") +
+    scale_y_continuous(breaks=seq(0,10,0.2)) +
+    coord_cartesian( ylim=c(0.4,1.8), expand = TRUE) + 
+    theme_bw() +
+    theme(axis.title.x = element_blank(),
+          legend.position = "none",
+          plot.title = element_text(hjust = 0.5),
+          axis.text = element_text(size=12),
+          axis.title.y = element_text(size=13)) +
+    scale_x_discrete(labels=c("I\nn=75", "II\nn=73", "III\nn=141", "IV\nn=20"))
+
 
 #pdf("./Figures/TCGA_UVM_TP_metscore_mel_stage_boxplot.pdf", w=8, h=6)
-ggplot(uvm.metscore.stage, aes(x=stage, y=met_score, fill=stage)) + 
+uvm.st <- ggplot(uvm.metscore.stage, aes(x=stage, y=metscore, fill=stage)) + 
     geom_boxplot() +
-    scale_fill_manual(values=colors7) +
-    ggtitle("Metastatic score UVM TP by cancer stage") +
+    scale_fill_manual(values=colors7) + 
+    geom_boxplot() +
+    ggtitle("UVM TP") +
     xlab("Cancer stage") +
-    ylab("Metastatic potential score (log2(expression))") +
-    scale_y_continuous(breaks=seq(0,10,0.25)) +
-    coord_cartesian( ylim=c(5,10), expand = FALSE )
-#dev.off()
+    ylab("Metastatic score") +
+    scale_y_continuous(breaks=seq(0,10,0.2)) +
+    coord_cartesian( ylim=c(0.4,1.8), expand = TRUE) +
+    theme_bw() +
+    theme(axis.title.x = element_blank(),
+          legend.position = "none",
+          plot.title = element_text(hjust = 0.5),
+          axis.text = element_text(size=12),
+          axis.title.y = element_text(size=13)) +
+    scale_x_discrete(labels=c("II\nn=36", "III\nn=40", "IV\nn=4")) +
+    annotate("text", x=1, y=1.8, label=paste0("p=",uvm.anov.p))
+
 
 # Anova
-tp.skcm.metscore.stage.anova <- aov(metscore~stage,  data=tp.skcm.metscore.stage)
-summary(tp.skcm.metscore.stage.anova)
-
-tm.skcm.metscore.stage.anova <- aov(metscore~stage,  data=tm.skcm.metscore.stage)
-summary(tm.skcm.metscore.stage.anova)
-
-#uvm.metscore.stage.anova <- aov(met_score~stage,  data=uvm.metscore.stage)
-#summary(uvm.metscore.stage.anova)
-
+summary(tp.skcm.metscore.stage.anova <- aov(metscore~stage,  data=tp.skcm.metscore.stage))
+summary(tm.skcm.metscore.stage.anova <- aov(metscore~stage,  data=tm.skcm.metscore.stage))
+uvm.anova <- summary(uvm.metscore.stage.anova <- aov(metscore~stage,  data=uvm.metscore.stage))
+uvm.anov.p <- round(uvm.anova[[1]][5][[1]][1], digits=4)
 
 # Boxplot by disease progression
-pdf("./Figures/TCGA_SKCM_TP_metscore_mel_prog_boxplot.pdf", w=5, h=6)
-ggplot(tp.skcm.metscore.stage, aes(x=earlyLate, y=metscore, fill=earlyLate)) + 
+tp.pr <- ggplot(tp.skcm.metscore.stage, aes(x=earlyLate, y=metscore, fill=earlyLate)) + 
     scale_fill_manual(values=colors4) +
     geom_boxplot() +
-    ggtitle("Metastatic score SKCM TP by disease progression") +
+    ggtitle("") +
     xlab("Disease progression") +
-    ylab("Metastatic potential score") +
-    scale_y_continuous(breaks=seq(0,10,0.1)) +
-    coord_cartesian( ylim=c(0,2), expand = FALSE )
-dev.off()
+    ylab("Metastatic score") +
+    scale_y_continuous(breaks=seq(0,10,0.2)) +
+    coord_cartesian( ylim=c(0.4,1.8), expand = TRUE) +
+    theme_bw() +
+    theme(axis.title.x = element_blank(),
+          legend.position = "none",
+          plot.title = element_text(hjust = 0.5),
+          axis.text = element_text(size=12),
+          axis.title.y = element_text(size=13)) +
+    scale_x_discrete(labels=c("Early\nn=68","Late\nn=31"))
 
-pdf("./Figures/TCGA_SKCM_TM_metscore_mel_prog_boxplot.pdf", w=5, h=6)
-ggplot(tm.skcm.metscore.stage, aes(x=earlyLate, y=metscore, fill=earlyLate)) + 
+tm.pr <- ggplot(tm.skcm.metscore.stage, aes(x=earlyLate, y=metscore, fill=earlyLate)) + 
     scale_fill_manual(values=colors4) +
     geom_boxplot() +
-    ggtitle("Metastatic score SKCM TM by disease progression") +
+    ggtitle("") +
     xlab("Disease progression") +
-    ylab("Metastatic potential score") +
-    scale_y_continuous(breaks=seq(0,10,0.1)) +
-    coord_cartesian( ylim=c(0,2), expand = FALSE )
-dev.off()
+    ylab("Metastatic score") +
+    scale_y_continuous(breaks=seq(0,10,0.2)) +
+    coord_cartesian( ylim=c(0.4,1.8), expand = TRUE) +
+    theme_bw() +
+    theme(axis.title.x = element_blank(),
+          legend.position = "none",
+          plot.title = element_text(hjust = 0.5),
+          axis.text = element_text(size=12),
+          axis.title.y = element_text(size=13)) +
+    scale_x_discrete(labels=c("Early\nn=148","Late\nn=161"))
 
-pdf("./Figures/TCGA_UVM_TP_metscore_mel_prog_boxplot.pdf", w=5, h=6)
-ggplot(uvm.metscore.stage, aes(x=earlyLate, y=met_score, fill=earlyLate)) + 
+uvm.pr <- ggplot(uvm.metscore.stage, aes(x=earlyLate, y=metscore, fill=earlyLate)) + 
     geom_boxplot() +
     scale_fill_manual(values=colors4) +
-    ggtitle("Metastatic score UVM TP by disease progression") +
+    ggtitle("") +
     xlab("Disease progression") +
-    ylab("Metastatic potential score (log2(expression))") +
-    scale_y_continuous(breaks=seq(0,10,0.25)) +
-    coord_cartesian( ylim=c(0,10), expand = FALSE )
+    ylab("Metastatic score") +
+    scale_y_continuous(breaks=seq(0,10,0.2)) +
+    coord_cartesian( ylim=c(0.4,1.8), expand = TRUE) +
+    theme_bw() +
+    theme(axis.title.x = element_blank(),
+          legend.position = "none",
+          plot.title = element_text(hjust = 0.5),
+          axis.text = element_text(size=12),
+          axis.title.y = element_text(size=13)) +
+    scale_x_discrete(labels=c("Early\nn=36","Late\nn=44")) +
+    annotate("text", x=0.82, y=1.8, label=paste0("p=",uvm.p))
+
+# Wilcoxon test
+tp.p <- round(wilcox.test(tp.skcm.metscore.stage$metscore[which(tp.skcm.metscore.stage$earlyLate=="early")], tp.skcm.metscore.stage$metscore[which(tp.skcm.metscore.stage$earlyLate=="late")])$p.value, digits=4)
+tm.p <- round(wilcox.test(tm.skcm.metscore.stage$metscore[which(tm.skcm.metscore.stage$earlyLate=="early")], tm.skcm.metscore.stage$metscore[which(tm.skcm.metscore.stage$earlyLate=="late")])$p.value, digits=4)
+uvm.p <- round(wilcox.test(uvm.metscore.stage$metscore[which(uvm.metscore.stage$earlyLate=="early")], uvm.metscore.stage$metscore[which(uvm.metscore.stage$earlyLate=="late")])$p.value, digits=4)
+
+
+# Output all boxplots asone plot
+pdf("./Figures/TCGA_metscore_mel_stage_prog_boxplot2.pdf", w=8, h=6)
+ggarrange(tp.st, tm.st, uvm.st, tp.pr, tm.pr, uvm.pr, 
+          labels = c("a)", "b)", "c)", "", "", ""),
+          ncol = 3, nrow = 2)
 dev.off()
-
-# T-test early vs late
-tp.skcm.metscore.stage.early <- tp.skcm.metscore.stage[which(tp.skcm.metscore.stage$earlyLate=="early"),]
-tp.skcm.metscore.stage.late <- tp.skcm.metscore.stage[which(tp.skcm.metscore.stage$earlyLate=="late"),]
-t.test(tp.skcm.metscore.stage.early$metscore, tp.skcm.metscore.stage.late$metscore)
-
-tm.skcm.metscore.stage.early <- tm.skcm.metscore.stage[which(tm.skcm.metscore.stage$earlyLate=="early"),]
-tm.skcm.metscore.stage.late <- tm.skcm.metscore.stage[which(tm.skcm.metscore.stage$earlyLate=="late"),]
-t.test(tm.skcm.metscore.stage.early$metscore, tm.skcm.metscore.stage.late$metscore)
-
-uvm.metscore.stage.early <- uvm.metscore.stage[which(uvm.metscore.stage$earlyLate=="early"),]
-uvm.metscore.stage.late <- uvm.metscore.stage[which(uvm.metscore.stage$earlyLate=="late"),]
-t.test(uvm.metscore.stage.early$met_score, uvm.metscore.stage.late$met_score)
 
 
 
@@ -699,6 +732,16 @@ summary(uvm.metpotential.low.anova)
 uvm.metpotential.high.anova <- aov(metscore~stage,  data=uvm.metpotential.high)
 summary(uvm.metpotential.high.anova)
 
+#--------- METSCORE MODEL USING SIGS ---------------------------------------------------------------------------
+p <- tp.skcm.metscore.stage
+
+summary(tp.metscore.mod <- lm(p$metscore~p$S7+p$S1+p$S11+p$S6+p$S23))
+summary(tp.metscore.mod <- glm(p$met_potential~p$S7+p$S1+p$S11+p$S6+p$S23))
+summary(tp.metscore.mod <- lm(p$metscore~p$S7))
+
+
+
+
 
 #--------- TOTAL MUTATIONS CONTRIBUTION ------------------------------------------------------------------------------------
 
@@ -730,33 +773,50 @@ save(tm.skcm.total.muts, file="./Output/TCGA_SKCM_TM_totalmutsigs.RData")
 # S1
 s1 <- tp.skcm.total.muts[,c(1:2,35,36)]
 quantile(s1$S1)
+s1.out <- s1[which(s1$S1>quantile(s1$S1)[2][[1]] & s1$S1<quantile(s1$S1)[4][[1]]),]
 cor.test(s1$S1, s1$metscore)
+test <- cor.test(s1$S1, s1$metscore)
+pval <- round(test$p.value, digits=4)
+cor <- round(test$estimate[[1]], digits=7)
+
 
 pdf("./Figures/TCGA_SKCM_TP_metscore_S1_scatter.pdf", w=8, h=6)
-ggplot(s1, aes(x=S1, y=metscore)) +
-    geom_point(shape=1) + 
-    geom_smooth(method=lm) + 
-    ggtitle("SKCM TP total S1 mutation contribution vs. metastatic score") +
-    xlab("Total mutations contributed by S1") +
+s1.scat <- ggplot(s1, aes(x=S1, y=metscore)) +
+    geom_point(shape=16, size=5, color="#1F78B4B3") + 
+    geom_smooth(color="black", method=lm) + 
+    ggtitle("S1") +
+    xlab("Total mutations contribution") +
     ylab("Metastatic score") +
     scale_x_continuous(breaks=seq(0,200,10)) +
     scale_y_continuous(breaks=seq(0,10,0.2)) +
-    coord_cartesian(xlim=c(0,137.7), ylim=c(0.6,1.5), expand=FALSE)+
-    annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
+    coord_cartesian(xlim=c(0,137.7), ylim=c(0.6,1.6), expand=FALSE) +
+    theme_bw() +
+    theme(axis.text = element_text(size=12),
+          axis.title = element_text(size=13)) +
+    annotate("text", x=110, y=c(1.55, 1.48), label = c(paste0("Correlation: ", cor), paste0("p-value: ", pval)))
 dev.off()
+
 
 s1$met_potential <- factor(s1$met_potential, levels = c("low","high"),ordered = TRUE)
 
 pdf("./Figures/TCGA_SKCM_TP_metpotential_S1_boxplot.pdf", w=6, h=6)
-ggplot(s1, aes(x=met_potential, y=S1)) +
-    geom_boxplot() +
-    ggtitle("SKCM TP total S1 mutation contribution vs. metastatic potential") +
+s1.viol <- ggplot(s1, aes(x=met_potential, y=S1, fill=met_potential)) +
+    geom_violin(color=NA) +
+    scale_fill_manual(values=colors3) +
+    ggtitle("") +
     xlab("Metastatic potential") +
-    ylab("Total mutations contributed by S1") +
-    scale_y_continuous(breaks=seq(0,200,10)) +
-    coord_cartesian(ylim=c(0,140), expand=FALSE)
+    ylab("Total mutations contribution") +
+    scale_y_continuous(breaks=seq(0,200,25)) +
+    coord_cartesian(ylim=c(0,140), expand=FALSE) +
+    theme_bw() +
+    stat_summary(fun.y = "median", geom = "point", shape = 18, size = 5, color = "black") +
+    scale_x_discrete(labels=c("Low\nn=45", "High\nn=53")) + 
+    theme(legend.position="none",
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=13))
     #annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
 dev.off()
+
 
 
 # S7, 1 outlier removed
@@ -764,33 +824,59 @@ s7 <- tp.skcm.total.muts[,c(1,8,35,36)]
 s7 <- s7[which(s7$S7<4000),]
 quantile(s7$S7)
 cor.test(s7$S7, s7$metscore)
+test <- cor.test(s7$S7, s7$metscore)
+pval <- round(test$p.value, digits=4)
+cor <- round(test$estimate[[1]], digits=7)
 
 pdf("./Figures/TCGA_SKCM_TP_metscore_S7_scatter.pdf", w=8, h=6)
-ggplot(s7, aes(x=S7, y=metscore)) +
-    geom_point(shape=1) + 
-    geom_smooth(method=lm) + 
-    ggtitle("SKCM TP total S7 mutation contribution vs. metastatic score") +
-    xlab("Total mutations contributed by S7") +
+s7.scat <- ggplot(s7, aes(x=S7, y=metscore)) +
+    geom_point(shape=16, size=5, color="#1F78B4B3") + 
+    geom_smooth(color="black", method=lm) +
+    ggtitle("S7") +
+    xlab("Total mutations contribution") +
     ylab("Metastatic score") +
-    theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
-    scale_x_continuous(breaks=seq(0,10000,100)) +
+    scale_x_continuous(breaks=seq(0,10000,250)) +
     scale_y_continuous(breaks=seq(0,10,0.2)) +
-    coord_cartesian(xlim=c(0,2575), ylim=c(0.6,1.5), expand=FALSE)+
-    annotate("text", x=2300, y=c(1.47, 1.44), label = c("Correlation: 0.140416", "p-value: 0.1701"))
+    coord_cartesian(xlim=c(0,2575), ylim=c(0.6,1.6), expand=FALSE)+
+    theme_bw() + 
+    theme(axis.text = element_text(size=12),
+          axis.title = element_text(size=13)) +
+    annotate("text", x=2100, y=c(1.55, 1.48),  label = c(paste0("Correlation: ", cor), paste0("p-value: ", pval)))
 dev.off()
 
 s7$met_potential <- factor(s7$met_potential, levels = c("low","high"),ordered = TRUE)
 
 pdf("./Figures/TCGA_SKCM_TP_metpotential_S7_boxplot.pdf", w=6, h=6)
-ggplot(s7, aes(x=met_potential, y=S7)) +
-    geom_boxplot() +
-    ggtitle("SKCM TP total S7 mutation contribution vs. metastatic potential") +
+s7.viol <- ggplot(s7, aes(x=met_potential, y=S7, fill=met_potential)) +
+    geom_violin(color=NA) +
+    scale_fill_manual(values=colors3) +
+    ggtitle("") +
     xlab("Metastatic potential") +
-    ylab("Total mutations contributed by S7") +
-    scale_y_continuous(breaks=seq(0,10000,100)) +
-    coord_cartesian(ylim=c(0,2600), expand=FALSE)
+    ylab("Total mutations contribution") +
+    scale_y_continuous(breaks=seq(0,100000,500)) +
+    coord_cartesian(ylim=c(0,2700), expand=FALSE) +
+    theme_bw() +
+    stat_summary(fun.y = "median", geom = "point", shape = 18, size = 5, color = "black") +
+    scale_x_discrete(labels=c("Low\nn=45", "High\nn=53")) + 
+    theme(legend.position="none",
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=13))
 #annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
 dev.off()
+
+
+
+# Output as one plot (get wt/mut from mutationalAnalysis_BRAF.R)
+
+
+pdf("./Figures/TCGA_SKCM_TP_metscore_pot_totalmuts.pdf", w=8, h=6)
+ggarrange(s1.scat, s1.viol, s7.scat, s1.viol, 
+          widths = c(2, 1),
+          nrow = 2,
+          ncol = 2,
+          labels = c("a)"))
+dev.off()
+
 
 # S11, 1 outlier removed
 s11 <- tp.skcm.total.muts[,c(1,12,35,36)]
@@ -974,4 +1060,131 @@ for (i in 1:nrow(tm.metsite)) {
         tm.metsite$metsite_group[i] <- "other"
     }
 }
+
+# ---- ~ Metscore ----
+
+cols8 <- c(brewer.pal(8, "Paired"), "#000000")
+
+ggplot(tm.metsite, aes(x=metsite_group, y=metscore, fill=metsite_group)) +
+    geom_boxplot() +
+    scale_fill_manual(values=cols8) +
+    ggtitle("") +
+    xlab("Metastatic site") +
+    ylab("Metastatic score") +
+    #scale_y_continuous(breaks=seq(0,200,25)) +
+    #coord_cartesian(ylim=c(0,140), expand=FALSE) +
+    theme_bw() +
+    #scale_x_discrete(labels=c(paste0("Amplified\nn=",amp), paste0("Not amplified\nn=", notamp))) +
+    theme(legend.position="none",
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=13)) +
+    annotate("text", x=1, y=1.8, label=paste0("p=",pval))
+
+# Anova
+an <- summary(metsite.anova <- aov(metscore~metsite_group,  data=tm.metsite))
+pval <- round(an[[1]][["Pr(>F)"]][[1]], digits=4)
+pairwise <- as.data.frame(TukeyHSD(metsite.anova)[[1]])
+pairwise$sign <- NA
+colnames(pairwise)[4] <- "padj"
+pairwise$sign <- ifelse(pairwise$padj < 0.05, "*","")
+
+write.csv(pairwise, file="./Output/TCGA_SKCM_TM_metsite_anova_pairwise.csv")
+
+# compare lymph node to everything else
+tm.metsite$lymph_met <- ifelse(tm.metsite$metsite_group=="lymph node", "lymph node", "other")
+tm.metsite$brain_met <- ifelse(tm.metsite$metsite_group=="brain", "brain", "other")
+
+pval_lymph <- round(wilcox.test(tm.metsite$metscore[which(tm.metsite$lymph_met=="lymph node")], tm.metsite$metscore[which(tm.metsite$lymph_met=="other")])$p.value, digits=4)
+
+ggplot(tm.metsite, aes(x=lymph_met, y=metscore, fill=lymph_met)) +
+    geom_boxplot() +
+    scale_fill_manual(values=cols8[c(5,6)]) +
+    ggtitle("") +
+    xlab("Metastatic site") +
+    ylab("Metastatic score") +
+    #scale_y_continuous(breaks=seq(0,200,25)) +
+    #coord_cartesian(ylim=c(0,140), expand=FALSE) +
+    theme_bw() +
+    #scale_x_discrete(labels=c(paste0("Amplified\nn=",amp), paste0("Not amplified\nn=", notamp))) +
+    theme(legend.position="none",
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=13)) +
+    annotate("text", x=1, y=1.8, label=paste0("p=",pval_lymph))
+
+
+pval_brain <- round(wilcox.test(tm.metsite$metscore[which(tm.metsite$brain_met=="brain")], tm.metsite$metscore[which(tm.metsite$brain_met=="other")])$p.value, digits=4)
+
+ggplot(tm.metsite, aes(x=brain_met, y=metscore, fill=brain_met)) +
+    geom_boxplot() +
+    scale_fill_manual(values=cols8[c(6,5)]) +
+    ggtitle("") +
+    xlab("Metastatic site") +
+    ylab("Metastatic score") +
+    #scale_y_continuous(breaks=seq(0,200,25)) +
+    #coord_cartesian(ylim=c(0,140), expand=FALSE) +
+    theme_bw() +
+    #scale_x_discrete(labels=c(paste0("Amplified\nn=",amp), paste0("Not amplified\nn=", notamp))) +
+    theme(legend.position="none",
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=13)) +
+    annotate("text", x=1, y=1.8, label=paste0("p=",pval_brain))
+
+# ---- ~ Metpotential ----
+
+sites <- c("bone","brain", "GI", "lung", "lymph", "other", "skin", "soft")
+metsite_pot <- data.frame(data=sites, low=NA, high=NA)
+
+for (i in 1:length(sites)) {
+    metsite_pot[i,2] <- nrow(tm.metsite[which(tm.metsite$metsite_group == sites[i] & tm.metsite$met_potential == "low"),])
+    metsite_pot[i,3] <- nrow(tm.metsite[which(tm.metsite$metsite_group == sites[i] & tm.metsite$met_potential == "high"),])
+}
+
+# Generates contingency tables and runs Fisher's exact test --> outputs into data frame
+fisher <- data.frame(metsite=metsite_pot$data, OR=NA, pval=NA, padj=NA)
+for (i in 1:nrow(metsite_pot)) {
+    p <- metsite_pot[i,2]
+    m <- metsite_pot[i,3]
+    sump <- colSums(metsite_pot[2])-p
+    summ <- colSums(metsite_pot[3])-m
+    mat <- array(c(p, sump, m, summ), c(2,2))
+    fisher[i,2] <- fisher.test(mat)$estimate
+    fisher[i,3] <- fisher.test(mat)$p.value
+}
+fisher$padj <- p.adjust(fisher$pval, method="BH")  
+write.csv(fisher, file="./Output/TCGA_SKCM_fisher.csv")   
+
+
+#--------- S1 VS. AGE ------------------------------------------------------------------------------------------
+cor.test(tp.skcm.totalmuts$S1, tp.clin$age_at_initial_pathologic_diagnosis)
+cor.test(tm.skcm.totalmuts$S1, tm.clin$age_at_initial_pathologic_diagnosis)
+cor.test(uvm.totalmuts$S1, clin$age_at_initial_pathologic_diagnosis)
+
+
+ggplot(tp.clin, aes(x=S1, y=age_at_initial_pathologic_diagnosis)) +
+    geom_point(shape=1) + 
+    geom_smooth(method=lm) +
+    #ggtitle("SKCM TP total mutation contribution S7/S1 vs. metastatic score") +
+    xlab("S1") +
+    ylab("Age") +
+    scale_x_continuous(breaks=seq(0,1000,10))+
+    scale_y_continuous(breaks=seq(0,10,0.2)) +
+    coord_cartesian(xlim=c(0,205.3), ylim=c(0.6,1.5), expand=FALSE) +
+    annotate("text", x=180, y=c(1.47, 1.44), label = c("Correlation: 0.05790048 ", "p-value: 0.5986"))
+
+
+ggplot(tp.clin, aes(x=age_at_initial_pathologic_diagnosis, y=S1)) +
+    geom_point(shape=16, size=5, color="#1F78B4B3") + 
+    geom_smooth(color="black", method=lm) + 
+    ggtitle("SKCM TP") +
+    xlab("Age") +
+    ylab("S1") +
+    theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
+    #scale_x_continuous(breaks=seq(0,2000,250)) +
+    #scale_y_continuous(breaks=seq(0,10,0.2)) +
+    #coord_cartesian(xlim=c(0,1976), ylim=c(0.6,1.6), expand=FALSE) +
+    theme_bw() + 
+    theme(axis.text = element_text(size=12),
+          axis.title = element_text(size=13))
+    #annotate("text", x=1500, y=c(1.55, 1.48), label = c(paste0("Correlation: ", cor), paste0("p-value: ", pval)))
+
 

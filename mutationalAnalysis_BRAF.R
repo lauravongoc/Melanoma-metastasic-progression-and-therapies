@@ -73,21 +73,27 @@ tm.braf.mut <- tm.braf[which(tm.braf$BRAF==1),]
 #--------- ~~~ S7 --------
 # WT plot -- S7 total muts vs. metscore -- 1 outlier removed
 wt.s7 <- tp.braf.wt[which(tp.braf.wt$S7<2000),]
+# wt.s7 <- tp.braf.wt
 quantile(wt.s7$S7)
-cor.test(wt.s7$S7, wt.s7$metscore)
+test <- cor.test(wt.s7$S7, wt.s7$metscore)
+pval <- round(test$p.value, digits=4)
+cor <- round(test$estimate[[1]], digits=7)
 
 pdf("./Figures/TCGA_SKCM_TP_BRAF_WT_S7_metscore_scatter.pdf", w=8, h=6)
-ggplot(wt.s7, aes(x=S7, y=metscore)) +
-    geom_point(shape=1) + 
-    geom_smooth(method=lm) + 
-    ggtitle("SKCM TP BRAF WT") +
-    xlab("Total mutations contributed by S7") +
+s7.wt <- ggplot(wt.s7, aes(x=S7, y=metscore)) +
+    geom_point(shape=16, size=5, color="#1F78B4B3") + 
+    geom_smooth(color="black", method=lm) + 
+    ggtitle("BRAF WT") +
+    xlab("Total mutations contribution") +
     ylab("Metastatic score") +
     theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
-    scale_x_continuous(breaks=seq(0,2000,50)) +
+    scale_x_continuous(breaks=seq(0,2000,250)) +
     scale_y_continuous(breaks=seq(0,10,0.2)) +
-    coord_cartesian(xlim=c(0,1976), ylim=c(0.6,1.5), expand=FALSE)+
-    annotate("text", x=1750, y=c(1.47, 1.44), label = c("Correlation: 0.4614446", "p-value: 0.02322"))
+    coord_cartesian(xlim=c(0,1976), ylim=c(0.6,1.6), expand=FALSE) +
+    theme_bw() + 
+    theme(axis.text = element_text(size=12),
+          axis.title = element_text(size=13)) +
+    annotate("text", x=1500, y=c(1.55, 1.48), label = c(paste0("Correlation: ", cor), paste0("p-value: ", pval)))
 dev.off()
 
 wt.s7$met_potential <- factor(wt.s7$met_potential, levels = c("low","high"),ordered = TRUE)
@@ -108,20 +114,25 @@ wilcox.test(wt.s7[which(mut.s7$met_potential=="low"),8],wt.s7[which(mut.s7$met_p
 # Mut plot -- S7 total muts vs. metscore -- 2 outliers removed
 mut.s7 <- tp.braf.mut[which(tp.braf.mut$S7<1800),]
 quantile(mut.s7$S7)
-cor.test(mut.s7$S7, mut.s7$metscore)
+test <- cor.test(mut.s7$S7, mut.s7$metscore)
+pval <- round(test$p.value, digits=4)
+cor <- round(test$estimate[[1]], digits=7)
 
 pdf("./Figures/TCGA_SKCM_TP_BRAF_mut_S7_metscore_scatter.pdf", w=8, h=6)
-ggplot(mut.s7, aes(x=S7, y=metscore)) +
-    geom_point(shape=1) + 
-    geom_smooth(method=lm) + 
-    ggtitle("SKCM TP BRAF mut") +
-    xlab("Total mutations contributed by S7") +
+s7.mut<- ggplot(mut.s7, aes(x=S7, y=metscore)) +
+    geom_point(shape=16, size=5, color="#fb9a99B3") + 
+    geom_smooth(color="black", method=lm) + 
+    ggtitle("BRAF MUT") +
+    xlab("Total mutations contribution") +
     ylab("Metastatic score") +
     theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
-    scale_x_continuous(breaks=seq(0,1000,50)) +
+    scale_x_continuous(breaks=seq(0,1000,100)) +
     scale_y_continuous(breaks=seq(0,10,0.2)) +
-    coord_cartesian(xlim=c(0,711), ylim=c(0.6,1.5), expand=FALSE)+
-    annotate("text", x=620, y=c(1.47, 1.44), label = c("Correlation: 0.1054162", "p-value: 0.5658"))
+    coord_cartesian(xlim=c(0,711), ylim=c(0.6,1.6), expand=FALSE) +
+    theme_bw() + 
+    theme(axis.text = element_text(size=12),
+          axis.title = element_text(size=13)) +
+    annotate("text", x=530, y=c(1.55, 1.48), label = c(paste0("Correlation: ", cor), paste0("p-value: ", pval)))
 dev.off()
 
 mut.s7$met_potential <- factor(mut.s7$met_potential, levels = c("low","high"),ordered = TRUE)
@@ -140,29 +151,38 @@ dev.off()
 wilcox.test(mut.s7[which(mut.s7$met_potential=="low"),8],mut.s7[which(mut.s7$met_potential=="high"),8])
 
 
+pdf("./Figures/TCGA_SKCM_TP_metscore_braf.pdf", w=8, h=6)
+ggarrange(s1.wt,s1.mut, s7.wt, s7.mut, 
+          ncol = 2,
+          nrow = 2,
+          labels=c("b)", "", "", ""))
+dev.off()
+
+
 #--------- ~~~ S1 --------
 # WT plot -- S1 total muts vs. metscore
 wt.s1 <- tp.braf.wt
-max <- quantile(wt.s1$S1)[5][[1]]
+quantile(wt.s1$S1)[5][[1]]
 # Correlation
 cor.test(wt.s1$S1, wt.s1$metscore)
 pval <- round(cor.test(wt.s1$S1, wt.s1$metscore)[3][[1]], digits=6) # limit to 6 digits
-cor <- round(cor.test(wt.s1$S1, wt.s1$metscore)[4][[1]][[1]], digits=8) # limit to 8 digits
-lab <- c(paste0("Correlation: ", cor), paste0("p-value: ", pval))
-
+cor <- round(cor.test(wt.s1$S1, wt.s1$metscore)[4][[1]][[1]], digits=7) # limit to 8 digits
 
 pdf("./Figures/TCGA_SKCM_TP_BRAF_WT_S1_metscore_scatter.pdf", w=8, h=6)
-ggplot(wt.s1, aes(x=S1, y=metscore)) +
-    geom_point(shape=1) + 
-    geom_smooth(method=lm) + 
-    ggtitle("SKCM TP BRAF WT") +
-    xlab("Total mutations contributed by S1") +
+s1.wt <- ggplot(wt.s1, aes(x=S1, y=metscore)) +
+    geom_point(shape=16, size=5, color="#1F78B4B3") + 
+    geom_smooth(color="black", method=lm) + 
+    ggtitle("BRAF WT") +
+    xlab("Total mutations contribution") +
     ylab("Metastatic score") +
     #theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
-    scale_x_continuous(breaks=seq(0,2000,2)) +
+    scale_x_continuous(breaks=seq(0,2000,10)) +
     scale_y_continuous(breaks=seq(0,10,0.2)) +
-    coord_cartesian(xlim=c(0,max+0.1), ylim=c(0.6,1.5), expand=FALSE)+
-    annotate("text", x=max-10, y=c(1.47, 1.44), label = lab)
+    coord_cartesian(xlim=c(0,83), ylim=c(0.6,1.6), expand=FALSE) +
+    theme_bw() + 
+    theme(axis.text = element_text(size=12),
+          axis.title = element_text(size=13)) +
+    annotate("text", x=63, y=c(1.55, 1.48), label = c(paste0("Correlation: ", cor), paste0("p-value: ", pval)))
 dev.off()
 
 wt.s1$met_potential <- factor(wt.s1$met_potential, levels = c("low","high"),ordered = TRUE)
@@ -185,22 +205,23 @@ max <- quantile(mut.s1$S1)[5][[1]]
 # Correlation
 cor.test(mut.s1$S1, mut.s1$metscore)
 pval <- round(cor.test(mut.s1$S1, mut.s1$metscore)[3][[1]], digits=6) # limit to 6 digits
-cor <- round(cor.test(mut.s1$S1, mut.s1$metscore)[4][[1]][[1]], digits=8) # limit to 8 digits
-lab <- c(paste0("Correlation: ", cor), paste0("p-value: ", pval))
-
+cor <- round(cor.test(mut.s1$S1, mut.s1$metscore)[4][[1]][[1]], digits=7) # limit to 8 digits
 
 pdf("./Figures/TCGA_SKCM_TP_BRAF_mut_S1_metscore_scatter.pdf", w=8, h=6)
-ggplot(mut.s1, aes(x=S1, y=metscore)) +
-    geom_point(shape=1) + 
-    geom_smooth(method=lm) + 
-    ggtitle("SKCM TP BRAF mut") +
-    xlab("Total mutations contributed by S1") +
+s1.mut <- ggplot(mut.s1, aes(x=S1, y=metscore)) +
+    geom_point(shape=16, size=5, color="#fb9a99B3") + 
+    geom_smooth(color="black", method=lm) +  
+    ggtitle("BRAF MUT") +
+    xlab("Total mutations contribution") +
     ylab("Metastatic score") +
     #theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
-    scale_x_continuous(breaks=seq(0,2000,2)) +
+    scale_x_continuous(breaks=seq(0,2000,10)) +
     scale_y_continuous(breaks=seq(0,10,0.2)) +
-    coord_cartesian(xlim=c(0,max+0.1), ylim=c(0.6,1.5), expand=FALSE)+
-    annotate("text", x=max-10, y=c(1.47, 1.44), label = lab)
+    coord_cartesian(xlim=c(0,79.3), ylim=c(0.6,1.6), expand=FALSE) +
+    theme_bw() + 
+    theme(axis.text = element_text(size=12),
+          axis.title = element_text(size=13)) +
+    annotate("text", x=61, y=c(1.55, 1.48), label = c(paste0("Correlation: ", cor), paste0("p-value: ", pval)))
 dev.off()
 
 mut.s1$met_potential <- factor(mut.s1$met_potential, levels = c("low","high"),ordered = TRUE)

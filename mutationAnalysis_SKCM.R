@@ -6,6 +6,7 @@ library("BSgenome.Hsapiens.UCSC.hg38")
 library(deconstructSigs)
 library(ggplot2)
 library(pheatmap)
+library(plotrix)
 library(RColorBrewer)
 library(reshape2)
 library(survival)
@@ -19,15 +20,36 @@ load("./Data/TCGA_SKCM_mutations.RData")             # Raw TCGA mutation data
 load("./Output/TCGA_SKCM_snvs.RData")      # Selected SNVs
 
 # Primary tumor
-load("./Output/TCGA_SKCM_TP_mutsig_input.RData")            # Mutation analysis input
+load("./Output/TCGA_SKCM_TP_mutsig_input.RData")        # Mutation analysis input
 load("./Output/TCGA_SKCM_TP_weights_cut0.00.RData")     # Mutational signatures output
+load("./Output/TCGA_SKCM_TP_mutsigs_means.RData")       # Mean mutsig
 
 # Metastatic tumor
-load("./Output/TCGA_SKCM_TM_mutsig_input.RData")            # Mutation analysis input
+load("./Output/TCGA_SKCM_TM_mutsig_input.RData")        # Mutation analysis input
 load("./Output/TCGA_SKCM_TM_weights_cut0.00.RData")     # Mutational signatures output
+load("./Output/TCGA_SKCM_TM_mutsigs_means.RData")       # Mean mutsig
+
+# Total mutsig mutations
+load("./Output/TCGA_SKCM_TP_totalmutsigs.RData")
+load("./Output/TCGA_SKCM_TM_totalmutsigs.RData")
 
 
-order <- c("S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13","S14","S15","S16","S17","S18","S19","S20","S21","S22","S23","S24","S25","S26","S27","S28","S29","S30","unknown")
+
+#--------- COLORS -----------------------------------------------------------------------------------------------------
+colors <- c(brewer.pal(12, "Paired"), brewer.pal(11, "Set3"),"#000000")
+colors2 <- c("#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F", "#BFA89E", "#826C7F", "#FF7F00",
+             "#CAB2D6", "#8B786D", "#6A3D9A", "#D6DBD2", "#FFFF99", "#B15928", "#8DD3C7", "#FFFFB3", "#E75A7C", "#BEBADA",
+             "#FB8072", "#40476D", "#80B1D3", "#FDB462", "#B3DE69", "#258EA6", "#FCCDE5", "#D9D9D9", "#BC80BD", "#CCEBC5", 
+             "#000000")
+colors3 <- brewer.pal(3, "Paired")
+colors4 <- c(brewer.pal(4, "Paired"),"#000000")
+colors6 <- c("#fb9a99", brewer.pal(4, "Paired"),"#000000")
+colors7 <- c("#1F78B4", "#B2DF8A", "#33A02C", "#000000")
+colors8 <- brewer.pal(10, "Spectral")
+
+
+order <- c("S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13","S14","S15","S16",
+           "S17","S18","S19","S20","S21","S22","S23","S24","S25","S26","S27","S28","S29","S30","unk","oth")
 
 
 #---------  DATA OF INTEREST ------------------------------------------------------------------------------------------
@@ -94,20 +116,13 @@ weight.tp <- as.data.frame(sapply(weights.tp, function(x) unlist(x)), row.names 
 colnames(weight.tp) <- sapply(colnames(weight.tp), function(x) paste0("S",strsplit(x, "\\.")[[1]][2]))
 
 # Add unknown contribution column
-weight.tp$unknown <- (1-rowSums(weight.tp))
+weight.tp$unk <- (1-rowSums(weight.tp))
 
 save(weight.tp, file="./Output/TCGA_SKCM_TP_weights_cut0.00.RData")
 
 
 # Sort by S1 (descending)
 sorted.tp <- weight.tp[order(-weight.tp$S1),]
-
-
-# Reformatting the weights data
-weight.tp <- as.matrix(weight.tp)
-melted.tp <- melt(weight.tp)
-colnames(melted.tp) <- c("PatientId", "Signature", "weight")
-melted.tp$weight <- sapply(melted.tp$weight, function(x) 100*x)
 
 # Remove non-contributing signatures
 sorted.tp <- as.matrix(sorted.tp)
@@ -118,11 +133,6 @@ melt.tp$weight <- sapply(melt.tp$weight, function(x) 100*x)
 
 
 # Plot: stacked barplot signatures
-colors <- c(brewer.pal(12, "Paired"), brewer.pal(11, "Set3"),"#000000")
-colors2 <- c("#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F", "#BFA89E", "#826C7F", "#FF7F00",
-             "#CAB2D6", "#8B786D", "#6A3D9A", "#D6DBD2", "#FFFF99", "#B15928", "#8DD3C7", "#FFFFB3", "#E75A7C", "#BEBADA",
-             "#FB8072", "#40476D", "#80B1D3", "#FDB462", "#B3DE69", "#258EA6", "#FCCDE5", "#D9D9D9", "#BC80BD", "#CCEBC5", 
-             "#000000")
 pdf("./Figures/TCGA_SKCM_TP_mutsig.pdf", w=10, h=6)
 ggplot(melt.tp, aes(x=PatientId, y=weight, fill=Signature)) + 
     scale_fill_manual(values=colors2) +
@@ -132,17 +142,60 @@ ggplot(melt.tp, aes(x=PatientId, y=weight, fill=Signature)) +
     ylab("Contribution (%)") +
     coord_cartesian(ylim=c(0,100), expand=FALSE) +
     theme(axis.text.x = element_blank(), 
-          axis.ticks.x = element_blank())
+          axis.ticks.x = element_blank(),
+          legend.position="none")
 dev.off()
     
 # Plot: boxplot signatures
 pdf("./Figures/TCGA_SKCM_TP_mutsigs_boxplot.pdf", w=10, h=6)
-ggplot(melt.tp, aes(x=Signature, y=weight)) +
+ggplot(melt.tp, aes(x=Signature, y=weight, fill=Signature)) +
     geom_boxplot() +
+    scale_fill_manual(values=colors2)+
     ggtitle("Mutational signature analysis SKCM primary tumor") +
     xlab("Signatures") +
     ylab("Contribution") +
-    coord_cartesian(ylim=c(0,100), expand=FALSE)
+    coord_cartesian(ylim=c(0,100), expand=FALSE) +
+    theme(legend.position="none")
+dev.off()
+
+
+# ~ Absolute number of mutations ----
+
+# Extract participant barcode from rowname
+tp.weight <- weight.tp
+tp.weight$tcga_participant_barcode <- rownames(tp.weight)
+tp.weight$tcga_participant_barcode <-  substr(tp.weight$tcga_participant_barcode, 1, 12)
+
+# Total number of mutations per sample
+skcm.totalmuts <- as.data.frame(table(snvs$Tumor_Sample_Barcode))
+colnames(skcm.totalmuts) <- c("tcga_participant_barcode","Total_Muts")
+skcm.totalmuts[,1] <- sapply(skcm.totalmuts$tcga_participant_barcode, function(x) substr(x, 1, 12))
+tp.skcm.totalmuts <- merge(tp.weight, skcm.totalmuts, by="tcga_participant_barcode")
+
+# Replace signature % contribution columns with total mutation contributions (% sig contribution * total muts)
+for (i in 2:32) {
+    tp.skcm.totalmuts[,i] <- tp.skcm.totalmuts[,i]*tp.skcm.totalmuts[,33]
+}
+
+save(tp.skcm.totalmuts, file="./Output/TCGA_SKCM_TP_total_mutsigs.RData")
+
+rownames(tp.skcm.totalmuts) <- tp.skcm.totalmuts$tcga_participant_barcode
+tp.totalmuts <- as.matrix(tp.skcm.totalmuts[,c(-1, -33)])
+tp.totalmuts <- log2(tp.totalmuts)
+tp.melt.totalmuts <- melt(tp.totalmuts)
+colnames(tp.melt.totalmuts) <- c("PatientID", "Signature", "weight")
+
+# Plot: boxplot total mutation signatures
+pdf("./Figures/TCGA_SKCM_TP_mutsigs_boxplot.pdf", w=10, h=6)
+ggplot(tp.melt.totalmuts, aes(x=Signature, y=weight, fill=Signature)) +
+    geom_boxplot() +
+    scale_fill_manual(values=heat.colors(31))+
+    #ggtitle("Mutational signature analysis SKCM primary tumor") +
+    xlab("Signature") +
+    ylab("log2(absolute number of mutations)") +
+    coord_cartesian(ylim=c(-5,15), expand=FALSE) +
+    theme_bw() +
+    theme(legend.position="none")
 dev.off()
 
 # Plot: heatmap
@@ -162,31 +215,103 @@ melt.sp1.7$weight <- sapply(melt.sp1.7$weight, function(x) 100*x)
 
 # Plot: boxplot signatures
 pdf("./Figures/TCGA_SKCM_TP_mutsigs1_7_boxplot.pdf", w=4, h=5)
-ggplot(melt.sp1.7, aes(x=Signature, y=weight)) +
+stp1.7 <- ggplot(melt.sp1.7, aes(x=Signature, y=weight, fill=Signature)) +
     geom_boxplot() +
-    ggtitle("SKCM primary tumor S1 vs S7") +
+    scale_fill_manual(values=colors6) +
+    #ggtitle("SKCM primary tumor S1 vs S7") +
     xlab("Signatures") +
-    ylab("Contribution")+
-    coord_cartesian(ylim=c(0,100), expand=FALSE)
+    ylab("Contribution (%)")+
+    coord_cartesian(ylim=c(0,100), expand=FALSE) +
+    theme_bw() +
+    theme(legend.position = "none",
+          axis.text = element_text(size=14),
+          axis.title = element_text(size=15)) +
+    annotate("text", x=1.5, y=95, label="p<2.2e-16", size=5)
 dev.off()
+
+wilcox.test(weight.tp$S1, weight.tp$S7)
 
 
 #--------- ~ Mean contributions per signature ---------
 
 means.tp <- data.frame(Signatures=c(colnames(trim.tp)), value=c(colMeans(trim.tp)*100))
+means.tp.2.5 <- means.tp[which(means.tp$value>2.5),]
+means.tp.1 <- means.tp[which(means.tp$value>1),]
+means.tp.oth <- setdiff(means.tp$Signatures, means.tp.1$Signatures)
+sum.oth <- sum(means.tp$value[which(means.tp$Signatures %in% means.tp.oth)])
+oth <- data.frame(Signatures="oth", value=sum.oth)
+means.oth.tp <- rbind(means.tp.1, oth)
 
-pdf("./Figures/TCGA_SKCM_TP_mutsigs_avg.pdf", w=13, h=6)
-ggplot(means.tp, aes(x=reorder(Signatures, -value), y=value)) + 
-    geom_bar(stat="identity", fill="dark blue") +
-    ggtitle("Mean mutational signature contributions SKCM primary tumor") +
+means.oth.tp$Signatures <- factor(means.oth.tp$Signatures, levels=order)
+means.oth.tp$sample <- "SKCM TP"
+
+
+pdf("./Figures/TCGA_SKCM_TP_mutsigs_avg_2.pdf", w=10, h=6)
+ggplot(means.oth.tp, aes(x=Signatures, y=value, fill=Signatures)) + 
+    geom_bar(stat="identity") +
+    scale_fill_manual(values=c(color8)) +
+    #ggtitle("Mean mutational signature contributions SKCM primary tumor") +
     xlab("Signatures") +
     ylab("Mean contribution (%)") +
     scale_y_continuous(breaks=seq(0,100,5)) +
-    coord_cartesian(ylim=c(0,70), expand=FALSE)
+    coord_cartesian(ylim=c(0,70), expand=FALSE) +
+    theme_bw() +
+    theme(legend.position="none")
 dev.off()
+
+gap.barplot(means.tp$value, gap=c(20,55))
+
 
 save(means.tp, file="./Output/TCGA_SKCM_TP_mutsigs_means.RData")
 
+#--------- ~ Mean SKCM ---------
+means.oth <- rbind(means.oth.tp, means.oth.tm)
+means.oth$sample <- factor(means.oth$sample, levels=c("SKCM TP", "SKCM TM"))
+
+
+pdf("./Figures/TCGA_SKCM_mutsigs_avg_20.pdf", w=8, h=4)
+skcm.mutsigs <- ggplot(means.oth, aes(x=Signatures, y=value, fill=sample)) + 
+    geom_bar(stat="identity", aes(fill=sample), position="dodge") +
+    scale_fill_manual(values=c(colors3)) +
+    #ggtitle("Mean mutational signature contributions SKCM primary tumor") +
+    xlab("Signatures") +
+    ylab("Mean contribution (%)") +
+    scale_y_continuous(breaks=seq(0,100,2)) +
+    coord_cartesian(ylim=c(0,20), expand=FALSE) +
+    theme_bw() +
+    theme(legend.position="none",
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=13),
+          legend.text = element_text(size=13))
+    #facet_wrap(~ sample, ncol=2)
+dev.off()
+
+pdf("./Figures/TCGA_SKCM_TP_mutsigs_avg_70.pdf", w=8, h=2)
+skcm.mutsigs.1 <- ggplot(means.oth, aes(x=Signatures, y=value, fill=sample)) + 
+    geom_bar(stat="identity", aes(fill=sample), position="dodge") +
+    scale_fill_manual(values=c(colors3)) +
+    ggtitle("SKCM") +
+    xlab("Signatures") +
+    ylab("Mean contribution (%)") +
+    scale_y_continuous(breaks=seq(0,100,2)) +
+    coord_cartesian(ylim=c(60,70.3), expand=FALSE) +
+    theme_bw() +
+    theme(legend.position=c(0.87,0.7), 
+          legend.title = element_blank(),
+          axis.title.x=element_blank(), 
+          axis.ticks.x = element_blank(), 
+          axis.text.x = element_blank(),
+          axis.text.y = element_text(size=12),
+          axis.title.y = element_text(size=13))
+dev.off()
+
+pdf("./Figures/TCGA_SKCM_UVM_mutsigs_avg_2.pdf", w=10, h=5)
+skcm.gg <- ggarrange(skcm.mutsigs.1, skcm.mutsigs,
+          nrow=2,
+          heights = c(1,2))
+ggarrange(skcm.gg, uvm.mutsigs,
+          ncol = 2)
+dev.off()
 
 
 #--------- MUTATIONAL SIGNATURES ANALYSIS: TM -------------------------------------------------------------------------
@@ -219,7 +344,7 @@ weight.tm <- as.data.frame(sapply(weights.tm, function(x) unlist(x)), row.names 
 colnames(weight.tm) <- sapply(colnames(weight.tm), function(x) paste0("S",strsplit(x, "\\.")[[1]][2]))
 
 # Add unknown contribution column
-weight.tm$unknown <- (1-rowSums(weight.tm))
+weight.tm$unk <- (1-rowSums(weight.tm))
 
 save(weight.tm, file="./Output/TCGA_SKCM_TM_weights_cut0.00.RData")
 
@@ -279,6 +404,27 @@ pdf("./Figures/TCGA_SKCM_TM_mutsigs_heatmap.pdf", w=10, h=6, onefile=FALSE)
 p.tm <- pheatmap(t(tm.mat), show_colnames = FALSE, main="Mutational signatures SKCM metastatic tumor")
 dev.off()
 
+# ~ Absolute mutations ----
+
+# Total number of mutations per sample
+tm.weight <- weight.tm
+tm.weight$tcga_participant_barcode <- rownames(tm.weight)
+tm.weight$tcga_participant_barcode <-  substr(tm.weight$tcga_participant_barcode, 1, 12)
+
+skcm.totalmuts <- as.data.frame(table(snvs$Tumor_Sample_Barcode))
+colnames(skcm.totalmuts) <- c("tcga_participant_barcode","Total_Muts")
+skcm.totalmuts[,1] <- sapply(skcm.totalmuts$tcga_participant_barcode, function(x) substr(x, 1, 12))
+
+tm.skcm.totalmuts <- merge(tm.weight, skcm.totalmuts, by="tcga_participant_barcode")
+
+
+# Replace signature % contribution columns with total mutation contributions (% sig contribution * total muts)
+for (i in 2:32) {
+    tm.skcm.totalmuts[,i] <- tm.skcm.totalmuts[,i]*tm.skcm.totalmuts[,33]
+}
+
+save(tm.skcm.totalmuts, file="./Output/TCGA_SKCM_TM_total_mutsigs.RData")
+
 
 #--------- ~ S1 and S7 analysis: TM ---------
 sm1.7 <- as.matrix(weight.tm[,c(1, 7)])
@@ -288,28 +434,59 @@ melt.sm1.7$weight <- sapply(melt.sm1.7$weight, function(x) 100*x)
 
 # Plot: boxplot signatures
 pdf("./Figures/TCGA_SKCM_TM_mutsigs1_7_boxplot.pdf", w=4, h=5)
-ggplot(melt.sm1.7, aes(x=Signature, y=weight)) +
+stm1.7 <- ggplot(melt.sm1.7, aes(x=Signature, y=weight, fill=Signature)) +
     geom_boxplot() +
-    ggtitle("SKCM metastatic tumor S1 vs S7") +
+    scale_fill_manual(values=colors6) + 
+    #ggtitle("SKCM metastatic tumor S1 vs S7") +
     xlab("Signatures") +
-    ylab("Contribution") +
-    coord_cartesian(ylim=c(0,100), expand=FALSE)
+    ylab("Contribution (%)") +
+    coord_cartesian(ylim=c(0,100), expand=FALSE) +
+    theme_bw()+
+    theme(legend.position="none",
+          axis.text = element_text(size=14),
+          axis.title = element_text(size=15))+
+    annotate("text", x=1.5, y=95, label="p<2.2e-16", size=5)
 dev.off()
 
+wilcox.test(weight.tm$S1, weight.tm$S7)
+
+pdf("./Figures/TCGA_SKCM_UVM_domsigs_boxplot.pdf", w=10, h=4)
+ggarrange(stp1.7, stm1.7, utp1.22,
+          ncol=3,
+          labels=c("a)", "b)", "c)"))
+dev.off()
 
 #--------- ~ Mean contributions per signature ---------
 
 means.tm <- data.frame(Signatures=c(colnames(trim.tm)), value=c(colMeans(trim.tm)*100))
+means.tm$Signatures <- factor(means.tm$Signatures, levels=order)
 
-pdf("./Figures/TCGA_SKCM_TM_mutsigs_avg.pdf", w=13, h=6)
-ggplot(means.tm, aes(x=reorder(Signatures, -value), y=value)) + 
-    geom_bar(stat="identity", fill="dark blue") +
-    ggtitle("Mean mutational signature contributions SKCM metastatic tumor") +
+means.tm <- data.frame(Signatures=c(colnames(trim.tm)), value=c(colMeans(trim.tm)*100))
+means.tm.2.5 <- means.tm[which(means.tm$value>2.5),]
+means.tm.1 <- means.tm[which(means.tm$value>1),]
+means.tm.oth <- setdiff(means.tm$Signatures, means.tm.1$Signatures)
+sum.oth <- sum(means.tm$value[which(means.tm$Signatures %in% means.tm.oth)])
+oth <- data.frame(Signatures="oth", value=sum.oth)
+means.oth.tm <- rbind(means.tm.1, oth)
+
+means.oth.tm$Signatures <- factor(means.oth.tm$Signatures, levels=order)
+means.oth.tm$sample <- "SKCM TM"
+
+color8 <- brewer.pal(10, "Spectral")
+pdf("./Figures/TCGA_SKCM_tm_mutsigs_avg_2.pdf", w=10, h=6)
+ggplot(means.oth.tm, aes(x=Signatures, y=value, fill=Signatures)) + 
+    geom_bar(stat="identity") +
+    scale_fill_manual(values=c(color8)) +
+    #ggtitle("Mean mutational signature contributions SKCM primary tumor") +
     xlab("Signatures") +
     ylab("Mean contribution (%)") +
     scale_y_continuous(breaks=seq(0,100,5)) +
-    coord_cartesian(ylim=c(0,70), expand=FALSE)
+    coord_cartesian(ylim=c(0,70), expand=FALSE) +
+    theme_bw() +
+    theme(legend.position="none")
 dev.off()
+
+gap.barplot(means.tp$value, gap=c(20,55))
 
 save(means.tm, file="./Output/TCGA_SKCM_TM_mutsigs_means.RData")
 
@@ -322,23 +499,30 @@ load("./Output/TCGA_SKCM_TM_weights_trim_cut0.00.RData")
 
 tp <- as.data.frame(weight.tp[,which(colSums(weight.tp)>0)])
 tm <- as.data.frame(weight.tm[,which(colSums(weight.tm)>0)])
-t.test(tp$S1, tp$S7)
-t.test(tm$S1, tm$S7)
+wilcox.test(tp$S1, tp$S7)
+wilcox.test(tm$S1, tm$S7)
 
 # Boxplot S1 in both samples
 tp.s1 <- data.frame(Type="TP", value=tp$S1*100)
 tm.s1 <- data.frame(Type="TM", value=tm$S1*100)
 S1 <- rbind(tp.s1, tm.s1)
 
+tpm.p1 <- round(wilcox.test(tp$S1, tm$S1)$p.value, digits=4)
+
 colors3 <- brewer.pal(3, "Paired")
 pdf("./Figures/TCGA_SKCM_S1_mutsigs_boxplot.pdf", w=4, h=5)
-ggplot(S1, aes(x=Type, y=value, fill=Type)) +
+skcm.1 <- ggplot(S1, aes(x=Type, y=value, fill=Type)) +
     geom_boxplot() +
     scale_fill_manual(values=colors3) +
-    ggtitle("SKCM S1") +
+    ggtitle("S1") +
     xlab("Sample type") +
     ylab("Contribution (%)") +
-    coord_cartesian(ylim=c(0,100), expand=FALSE)
+    coord_cartesian(ylim=c(0,100), expand=FALSE) +
+    theme_bw() +
+    theme(legend.position = "none",
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=13)) +
+    annotate("text", x=1.5, y=95, label=paste0("p=", tpm.p1))
 dev.off()
 
 # Boxplot S7 in both samples
@@ -346,19 +530,28 @@ tp.s7 <- data.frame(Type="TP", value=tp$S7*100)
 tm.s7 <- data.frame(Type="TM", value=tm$S7*100)
 S7 <- rbind(tp.s7, tm.s7)
 
+tpm.p7 <- round(wilcox.test(tp$S7, tm$S7)$p.value, digits=4)
+
 colors3 <- brewer.pal(3, "Paired")
 pdf("./Figures/TCGA_SKCM_S7_mutsigs_boxplot.pdf", w=4, h=5)
-ggplot(S7, aes(x=Type, y=value, fill=Type)) +
+skcm.7 <- ggplot(S7, aes(x=Type, y=value, fill=Type)) +
     geom_boxplot() +
     scale_fill_manual(values=colors3) +
-    ggtitle("SKCM S7") +
+    ggtitle("S7") +
     xlab("Sample type") +
     ylab("Contribution (%)") +
-    coord_cartesian(ylim=c(0,100), expand=FALSE)
+    coord_cartesian(ylim=c(0,100), expand=FALSE) +
+    theme_bw() +
+    theme(legend.position = "none",
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=13)) +
+    annotate("text", x=1.5, y=95, label=paste0("p=", tpm.p7))
 dev.off()
 
-t.test(tp$S1, tm$S1)
-t.test(tp$S7, tm$S7)
+pdf("./Figures/TCGA_SKCM_S1_S7_mutsigs_boxplot.pdf", w=8, h=4)
+ggarrange(skcm.1, skcm.7,
+          ncol=2)
+dev.off()
 
 
 tp$patient_id <- sapply(rownames(tp), function(x) as.factor(tolower(strsplit(x,"-")[[1]][3])))
@@ -432,15 +625,19 @@ colnames(melt.merged) <- c("Signatures", "Sample", "value")
 melt.merged$Signatures <- factor(melt.merged$Signatures, levels=order)
 
 colors3 <- brewer.pal(3, "Paired")
-pdf("./Figures/TCGA_SKCM_UVM_mutsigs_avg.pdf", w=13, h=6)
+pdf("./Figures/TCGA_SKCM_UVM_mutsigs_avg_70.pdf", w=13, h=2.37)
 ggplot(melt.merged, aes(x=Signatures, y=value)) + 
-    scale_fill_manual(values=colors3) +
     geom_bar(stat="identity", aes(fill=Sample), position="dodge") +
-    ggtitle("Mean mutational signature contributions SKCM and UVM") +
-    xlab("Signatures") +
+    scale_fill_manual(values=colors3) +
+    scale_color_manual(labels = c("SKCM primary", "SKCM metastatic", "UVM primary"), values = colors3) +
+    #ggtitle("Mean mutational signature contributions SKCM and UVM") +
+    #xlab("Signatures") +
     ylab("Mean contribution (%)") +
     scale_y_continuous(breaks=seq(0,100,5)) +
-    coord_cartesian(ylim=c(0,75), expand=FALSE)
+    coord_cartesian(ylim=c(60,70), expand=FALSE) +
+    theme_bw() +
+    theme(legend.position="top", 
+          axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
 dev.off()
 
 
@@ -598,7 +795,7 @@ dev.off()
 
 # Loop over each signature, by stage
 # Data frame for t-test output
-tp.prog.ttest <- data.frame(Signature=colnames(tp.stage)[4:34], t=NA, df=NA, pval = NA)
+tp.prog.wilcox <- data.frame(Signature=colnames(tp.stage)[4:34], W=NA, pval = NA)
 for (i in 4:34) {
     sig <- noquote(colnames(tp.stage[i]))
     var <- na.omit(data.frame(Progression=tp.stage$earlyLate, weight=tp.stage[,i]))
@@ -607,30 +804,27 @@ for (i in 4:34) {
     
     early <- var[which(var$Progression == "early"),]
     late <- var[which(var$Progression == "late"),]
-    ttest <- t.test(early$weight, late$weight)
+    wilcox <- wilcox.test(early$weight, late$weight)
     
-    tp.prog.ttest[which(tp.prog.ttest$Signature==sig),2] <- ttest$statistic
-    tp.prog.ttest[which(tp.prog.ttest$Signature==sig),3] <- ttest$parameter
-    tp.prog.ttest[which(tp.prog.ttest$Signature==sig),4] <- ttest$p.value
-    #tp.prog.ttest[which(tp.prog.ttest$Signature==sig),5] <- ttest$conf.int
-    #tp.prog.ttest[which(tp.prog.ttest$Signature==sig),6] <- ttest$estimate
+    tp.prog.wilcox[which(tp.prog.wilcox$Signature==sig),2] <- wilcox$statistic
+    tp.prog.wilcox[which(tp.prog.wilcox$Signature==sig),3] <- wilcox$p.value
+    #tp.prog.wilcox[which(tp.prog.wilcox$Signature==sig),5] <- wilcox$conf.int
+    #tp.prog.wilcox[which(tp.prog.wilcox$Signature==sig),6] <- wilcox$estimate
     
     pdf(file, w=7, h=5)
     plot <- ggplot(var, aes(x=Progression, y=weight*100)) +
-         #geom_bar(stat="identity", fill="blue") +
-         geom_boxplot() +
-         ggtitle(title) +
-         xlab("Disease progression") +
-         ylab("Contribution (%)") +
-         coord_cartesian(ylim=c(0,100), expand=FALSE)
+        #geom_bar(stat="identity", fill="blue") +
+        geom_boxplot() +
+        ggtitle(title) +
+        xlab("Disease progression") +
+        ylab("Contribution (%)") +
+        coord_cartesian(ylim=c(0,100), expand=FALSE)
     print(plot)
     dev.off()
 }
-tp.prog.ttest$padj <- p.adjust(tp.prog.ttest$pval, method="BH")
+tp.prog.wilcox$padj <- p.adjust(tp.prog.wilcox$pval, method="BH")
 
-write.csv(tp.prog.ttest, file="./Output/TCGA_SKCM_TP_prog_eachsigttest.csv")
-
-
+write.csv(tp.prog.wilcox, file="./Output/TCGA_SKCM_TP_prog_eachsigwilcox.csv")
 
 # Group by stage (4/104 = NA)
 tp.stage1 <- tp.stage[which(tp.stage$stage == "I"),c(2,4:34)]
@@ -649,6 +843,19 @@ tp.stage4 <- tp.stage[which(tp.stage$stage == "IV"),c(2,4:34)]
 rownames(tp.stage4) <- tp.stage4$tcga_participant_barcode
 tp.stage4 <- tp.stage4[,-1]
 
+stages <- c("I", "II", "III", "IV")
+
+    sta <- stages[i]
+    tp.sta <- tp.stage[which(tp.stage$stage==sta),]
+    
+tp.stage.anovas <- data.frame(Signature=colnames(tp.stage), pval=NA)
+tp.stage.anov <- tp.stage[!is.na(tp.stage$stage)]
+for (i in 4:34) {
+    sig <- as.factor(noquote(colnames(tp.stage)[i]))
+    tp.stage.anovas[i,1] <- summary(aov( sig ~ stage, data=tp.stage))[[1]][["Pr(>F)"]][1]
+    
+}
+
 
 ## Stage I
 tp.stage1 <- as.matrix(tp.stage1)
@@ -659,12 +866,12 @@ tp.stage1.melt$weight <- sapply(tp.stage1.melt$weight, function(x) 100*x)
 
 #Boxplot
 pdf("./Figures/TCGA_SKCM_TP_mutsigs_stage1_boxplot.pdf", w=10, h=6)
-ggplot(tp.stage1.melt, aes(x=Signature, y=weight)) +
+ggplot(tp.stage.anov, aes(x=stage, y=S7)) +
     geom_boxplot() +
     ggtitle("Mutational signature analysis SKCM TP Stage I") +
     xlab("Signatures") +
-    ylab("Contribution") +
-    coord_cartesian(ylim=c(0,100), expand=FALSE)
+    ylab("Contribution")
+    #coord_cartesian(ylim=c(0,100), expand=FALSE)
 dev.off()
 
 #Anova
@@ -886,7 +1093,7 @@ dev.off()
 
 # Loop over each signature, by stage
 # Data frame for t-test output
-tm.prog.ttest <- data.frame(Signature=colnames(tm.stage)[4:34], t=NA, df=NA, pval = NA)
+tm.prog.wilcox <- data.frame(Signature=colnames(tm.stage)[4:34], W=NA, pval = NA)
 for (i in 4:34) {
     sig <- noquote(colnames(tm.stage[i]))
     var <- na.omit(data.frame(Progression=tm.stage$earlyLate, weight=tm.stage[,i]))
@@ -895,13 +1102,12 @@ for (i in 4:34) {
     
     early <- var[which(var$Progression == "early"),]
     late <- var[which(var$Progression == "late"),]
-    ttest <- t.test(early$weight, late$weight)
+    wilcox <- wilcox.test(early$weight, late$weight)
     
-    tm.prog.ttest[which(tm.prog.ttest$Signature==sig),2] <- ttest$statistic
-    tm.prog.ttest[which(tm.prog.ttest$Signature==sig),3] <- ttest$parameter
-    tm.prog.ttest[which(tm.prog.ttest$Signature==sig),4] <- ttest$p.value
-    #tm.prog.ttest[which(tm.prog.ttest$Signature==sig),5] <- ttest$conf.int
-    #tm.prog.ttest[which(tm.prog.ttest$Signature==sig),6] <- ttest$estimate
+    tm.prog.wilcox[which(tm.prog.wilcox$Signature==sig),2] <- wilcox$statistic
+    tm.prog.wilcox[which(tm.prog.wilcox$Signature==sig),3] <- wilcox$p.value
+    #tm.prog.wilcox[which(tm.prog.wilcox$Signature==sig),5] <- wilcox$conf.int
+    #tm.prog.wilcox[which(tm.prog.wilcox$Signature==sig),6] <- wilcox$estimate
     
     pdf(file, w=7, h=5)
     plot <- ggplot(var, aes(x=Progression, y=weight*100)) +
@@ -914,9 +1120,11 @@ for (i in 4:34) {
     print(plot) 
     dev.off()
 }
-tm.prog.ttest$padj <- p.adjust(tm.prog.ttest$pval, method="BH")
+tm.prog.wilcox$padj <- p.adjust(tm.prog.wilcox$pval, method="BH")
 
-write.csv(tm.prog.ttest, file="./Output/TCGA_SKCM_TM_prog_eachsigttest.csv")
+write.csv(tm.prog.wilcox, file="./Output/TCGA_SKCM_TM_prog_eachsigwilcox.csv")
+
+
 
 
 #--------- ~~T/N/M Stage TM -------
@@ -1053,7 +1261,8 @@ tm.interferon.anova <- aov(weight~Signatures,  data=tm.interferon.melt)
 summary(tm.interferon.anova)
 
 
-# ttest by pair of signatures per therapy
+# 
+by pair of signatures per therapy
 # radiation
 tm.radiation.t <- tm.radiation[,6:36]
 #tm.radiation.t.df <- data.frame(matrix(NA, nrow=31, ncol=31), row.names=noquote(order))
@@ -1072,7 +1281,8 @@ for (i in 1:(ncol(tm.radiation.t)-1)) {
 }
 tm.radiation.tdf$padj <- p.adjust(tm.radiation.tdf$pval, method="BH")
 tm.radiation.tdf$sign <- sapply(tm.radiation.tdf$padj, function(x) ifelse(x<0.05, "*", ""))
-write.csv(tm.radiation.tdf, file="./Output/TCGA_SKCM_TM_radiation_eachsigttest.csv")
+write.csv(tm.radiation.tdf, file="./Output/TCGA_SKCM_TM_radiation_eachsig
+          .csv")
 
 # interferon
 tm.interferon.t <- tm.interferon[,6:36]
@@ -1089,7 +1299,8 @@ for (i in 1:(ncol(tm.interferon.t)-1)) {
 }
 tm.interferon.tdf$padj <- p.adjust(tm.interferon.tdf$pval, method="BH")
 tm.interferon.tdf$sign <- sapply(tm.interferon.tdf$padj, function(x) ifelse(x<0.05, "*", ""))
-write.csv(tm.interferon.tdf, file="./Output/TCGA_SKCM_TM_interferon_eachsigttest.csv")
+write.csv(tm.interferon.tdf, file="./Output/TCGA_SKCM_TM_interferon_eachsig
+          .csv")
 
 
 
@@ -1122,7 +1333,8 @@ dev.off()
 
 # Loop over each signature, by therapy
 # Data frame for t-test output
-tm.ther.ttest <- data.frame(Signature=colnames(tm.ther)[6:36], t=NA, df=NA, pval = NA)
+tm.ther.
+<- data.frame(Signature=colnames(tm.ther)[6:36], t=NA, df=NA, pval = NA)
 for (i in 6:36) {
     sig <- noquote(colnames(tm.ther[i]))
     #var <- na.omit(data.frame(Therapy=tm.stage$earlyLate, weight=tm.stage[,i]))
@@ -1132,13 +1344,29 @@ for (i in 6:36) {
     radiation <- na.omit(data.frame(Therapy="radiation", weight=tm.radiation[,i]))
     interferon <- na.omit(data.frame(Therapy="interferon", weight=tm.interferon[,i]))
     var <- rbind(radiation, interferon)
-    ttest <- t.test(radiation$weight, interferon$weight)
     
-    tm.ther.ttest[which(tm.ther.ttest$Signature==sig),2] <- ttest$statistic
-    tm.ther.ttest[which(tm.ther.ttest$Signature==sig),3] <- ttest$parameter
-    tm.ther.ttest[which(tm.ther.ttest$Signature==sig),4] <- ttest$p.value
-    #tm.ther.ttest[which(tm.ther.ttest$Signature==sig),5] <- ttest$conf.int
-    #tm.ther.ttest[which(tm.ther.ttest$Signature==sig),6] <- ttest$estimate
+     <- t.test(radiation$weight, interferon$weight)
+    
+    tm.ther.
+    [which(tm.ther.
+                        $Signature==sig),2] <- 
+        $statistic
+    tm.ther.
+    [which(tm.ther.
+                        $Signature==sig),3] <- 
+        $parameter
+    tm.ther.
+    [which(tm.ther.
+                        $Signature==sig),4] <- 
+        $p.value
+    #tm.ther.
+    [which(tm.ther.
+    $Signature==sig),5] <- 
+    $conf.int
+    #tm.ther.
+    [which(tm.ther.
+    $Signature==sig),6] <- 
+    $estimate
     
     pdf(file, w=7, h=5)
     plot <- ggplot(var, aes(x=Therapy, y=weight*100)) +
@@ -1151,5 +1379,9 @@ for (i in 6:36) {
     print(plot) 
     dev.off()
 }
-tm.ther.ttest$padj <- p.adjust(tm.prog.ttest$pval, method="BH")
-write.csv(tm.ther.ttest, file="./Output/TCGA_SKCM_TM_ther_eachsigttest.csv")
+tm.ther.
+$padj <- p.adjust(tm.prog.
+                               $pval, method="BH")
+write.csv(tm.ther.
+, file="./Output/TCGA_SKCM_TM_ther_eachsig
+          .csv")
