@@ -779,8 +779,6 @@ test <- cor.test(s1$S1, s1$metscore)
 pval <- round(test$p.value, digits=4)
 cor <- round(test$estimate[[1]], digits=7)
 
-
-pdf("./Figures/TCGA_SKCM_TP_metscore_S1_scatter.pdf", w=8, h=6)
 s1.scat <- ggplot(s1, aes(x=S1, y=metscore)) +
     geom_point(shape=16, size=5, color="#1F78B4B3") + 
     geom_smooth(color="black", method=lm) + 
@@ -794,12 +792,9 @@ s1.scat <- ggplot(s1, aes(x=S1, y=metscore)) +
     theme(axis.text = element_text(size=12),
           axis.title = element_text(size=13)) +
     annotate("text", x=110, y=c(1.55, 1.48), label = c(paste0("Correlation: ", cor), paste0("p-value: ", pval)))
-dev.off()
-
 
 s1$met_potential <- factor(s1$met_potential, levels = c("low","high"),ordered = TRUE)
 
-pdf("./Figures/TCGA_SKCM_TP_metpotential_S1_boxplot.pdf", w=6, h=6)
 s1.viol <- ggplot(s1, aes(x=met_potential, y=S1, fill=met_potential)) +
     geom_violin(color=NA) +
     scale_fill_manual(values=colors3) +
@@ -814,9 +809,8 @@ s1.viol <- ggplot(s1, aes(x=met_potential, y=S1, fill=met_potential)) +
     theme(legend.position="none",
           axis.text = element_text(size=12),
           axis.title = element_text(size=13))
-    #annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
-dev.off()
 
+wilcox.test(s1$S1[which(s1$met_potential=="low")], s1$S1[which(s1$met_potential=="high")])
 
 
 # S7, 1 outlier removed
@@ -828,7 +822,6 @@ test <- cor.test(s7$S7, s7$metscore)
 pval <- round(test$p.value, digits=4)
 cor <- round(test$estimate[[1]], digits=7)
 
-pdf("./Figures/TCGA_SKCM_TP_metscore_S7_scatter.pdf", w=8, h=6)
 s7.scat <- ggplot(s7, aes(x=S7, y=metscore)) +
     geom_point(shape=16, size=5, color="#1F78B4B3") + 
     geom_smooth(color="black", method=lm) +
@@ -842,11 +835,9 @@ s7.scat <- ggplot(s7, aes(x=S7, y=metscore)) +
     theme(axis.text = element_text(size=12),
           axis.title = element_text(size=13)) +
     annotate("text", x=2100, y=c(1.55, 1.48),  label = c(paste0("Correlation: ", cor), paste0("p-value: ", pval)))
-dev.off()
 
 s7$met_potential <- factor(s7$met_potential, levels = c("low","high"),ordered = TRUE)
 
-pdf("./Figures/TCGA_SKCM_TP_metpotential_S7_boxplot.pdf", w=6, h=6)
 s7.viol <- ggplot(s7, aes(x=met_potential, y=S7, fill=met_potential)) +
     geom_violin(color=NA) +
     scale_fill_manual(values=colors3) +
@@ -861,14 +852,10 @@ s7.viol <- ggplot(s7, aes(x=met_potential, y=S7, fill=met_potential)) +
     theme(legend.position="none",
           axis.text = element_text(size=12),
           axis.title = element_text(size=13))
-#annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
-dev.off()
 
+wilcox.test(s7$S7[which(s7$met_potential=="low")], s7$S7[which(s7$met_potential=="high")])
 
-
-# Output as one plot (get wt/mut from mutationalAnalysis_BRAF.R)
-
-
+# Output S1 and S7 as one plot
 pdf("./Figures/TCGA_SKCM_TP_metscore_pot_totalmuts.pdf", w=8, h=6)
 ggarrange(s1.scat, s1.viol, s7.scat, s1.viol, 
           widths = c(2, 1),
@@ -907,7 +894,6 @@ ggplot(s11, aes(x=met_potential, y=S11)) +
     ylab("Total mutations contributed by S11") +
     scale_y_continuous(breaks=seq(0,300,10)) +
     coord_cartesian(ylim=c(0,100), expand=FALSE)
-#annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
 dev.off()
 
 
@@ -940,7 +926,6 @@ ggplot(s23, aes(x=met_potential, y=S23)) +
     ylab("Total mutations contributed by S23") +
     scale_y_continuous(breaks=seq(0,300,10)) +
     coord_cartesian(ylim=c(0,235), expand=FALSE)
-#annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
 dev.off()
 
 
@@ -972,7 +957,6 @@ ggplot(s6, aes(x=met_potential, y=S6)) +
     ylab("Total mutations contributed by S6") +
     scale_y_continuous(breaks=seq(0,300,10)) +
     coord_cartesian(ylim=c(0,75), expand=FALSE)
-#annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
 dev.off()
 
 
@@ -1009,7 +993,6 @@ ggplot(s7.1, aes(x=met_potential, y=S7.1)) +
     ylab("Total mutations contributed by S7/S1") +
     scale_y_continuous(breaks=seq(0,200,10)) +
     coord_cartesian(ylim=c(0,206), expand=FALSE)
-#annotate("text", x=120, y=c(1.47, 1.44), label = c("Correlation: 0.1649576", "p-value: 0.1045"))
 dev.off()
 
 
@@ -1028,7 +1011,8 @@ norm.skcm <- Samples.mRNASeq(format = "csv",
 # 68 rows of NT samples, all with same participant barcode: TCGA-GN-A4U8 (matches a TM sample)
 
 
-#--------- METSITES ----------------------------------------------------------------------------------------------
+
+#--------- METASTATIC SITES ----------------------------------------------------------------------------------------------
 
 # Generate df of mutsig, metscore, metsite, and stage, SKCM TM
 tm.metsite <- merge(tm.clin[,c(2,23)], tm.skcm.metscore.stage[,c(1,4:36,38:39)], by="tcga_participant_barcode")
@@ -1071,10 +1055,7 @@ ggplot(tm.metsite, aes(x=metsite_group, y=metscore, fill=metsite_group)) +
     ggtitle("") +
     xlab("Metastatic site") +
     ylab("Metastatic score") +
-    #scale_y_continuous(breaks=seq(0,200,25)) +
-    #coord_cartesian(ylim=c(0,140), expand=FALSE) +
     theme_bw() +
-    #scale_x_discrete(labels=c(paste0("Amplified\nn=",amp), paste0("Not amplified\nn=", notamp))) +
     theme(legend.position="none",
           axis.text = element_text(size=12),
           axis.title = element_text(size=13)) +
@@ -1102,10 +1083,7 @@ ggplot(tm.metsite, aes(x=lymph_met, y=metscore, fill=lymph_met)) +
     ggtitle("") +
     xlab("Metastatic site") +
     ylab("Metastatic score") +
-    #scale_y_continuous(breaks=seq(0,200,25)) +
-    #coord_cartesian(ylim=c(0,140), expand=FALSE) +
     theme_bw() +
-    #scale_x_discrete(labels=c(paste0("Amplified\nn=",amp), paste0("Not amplified\nn=", notamp))) +
     theme(legend.position="none",
           axis.text = element_text(size=12),
           axis.title = element_text(size=13)) +
@@ -1120,14 +1098,12 @@ ggplot(tm.metsite, aes(x=brain_met, y=metscore, fill=brain_met)) +
     ggtitle("") +
     xlab("Metastatic site") +
     ylab("Metastatic score") +
-    #scale_y_continuous(breaks=seq(0,200,25)) +
-    #coord_cartesian(ylim=c(0,140), expand=FALSE) +
     theme_bw() +
-    #scale_x_discrete(labels=c(paste0("Amplified\nn=",amp), paste0("Not amplified\nn=", notamp))) +
     theme(legend.position="none",
           axis.text = element_text(size=12),
           axis.title = element_text(size=13)) +
     annotate("text", x=1, y=1.8, label=paste0("p=",pval_brain))
+
 
 # ---- ~ Metpotential ----
 
@@ -1155,22 +1131,22 @@ write.csv(fisher, file="./Output/TCGA_SKCM_fisher.csv")
 
 
 #--------- S1 VS. AGE ------------------------------------------------------------------------------------------
+
+# Correlation test per cohort
 cor.test(tp.skcm.totalmuts$S1, tp.clin$age_at_initial_pathologic_diagnosis)
 cor.test(tm.skcm.totalmuts$S1, tm.clin$age_at_initial_pathologic_diagnosis)
 cor.test(uvm.totalmuts$S1, clin$age_at_initial_pathologic_diagnosis)
 
-
+# Plot SKCM TP
 ggplot(tp.clin, aes(x=S1, y=age_at_initial_pathologic_diagnosis)) +
     geom_point(shape=1) + 
     geom_smooth(method=lm) +
-    #ggtitle("SKCM TP total mutation contribution S7/S1 vs. metastatic score") +
     xlab("S1") +
     ylab("Age") +
     scale_x_continuous(breaks=seq(0,1000,10))+
     scale_y_continuous(breaks=seq(0,10,0.2)) +
     coord_cartesian(xlim=c(0,205.3), ylim=c(0.6,1.5), expand=FALSE) +
     annotate("text", x=180, y=c(1.47, 1.44), label = c("Correlation: 0.05790048 ", "p-value: 0.5986"))
-
 
 ggplot(tp.clin, aes(x=age_at_initial_pathologic_diagnosis, y=S1)) +
     geom_point(shape=16, size=5, color="#1F78B4B3") + 
@@ -1179,12 +1155,8 @@ ggplot(tp.clin, aes(x=age_at_initial_pathologic_diagnosis, y=S1)) +
     xlab("Age") +
     ylab("S1") +
     theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
-    #scale_x_continuous(breaks=seq(0,2000,250)) +
-    #scale_y_continuous(breaks=seq(0,10,0.2)) +
-    #coord_cartesian(xlim=c(0,1976), ylim=c(0.6,1.6), expand=FALSE) +
     theme_bw() + 
     theme(axis.text = element_text(size=12),
           axis.title = element_text(size=13))
-    #annotate("text", x=1500, y=c(1.55, 1.48), label = c(paste0("Correlation: ", cor), paste0("p-value: ", pval)))
 
-
+# No significant correlations between S1 and age

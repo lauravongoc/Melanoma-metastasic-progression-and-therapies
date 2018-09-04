@@ -4,6 +4,7 @@
 
 library(deconstructSigs)
 library(ggplot2)
+library(ggpubr)
 library(pheatmap)
 library(RColorBrewer)
 library(reshape2)
@@ -1072,10 +1073,16 @@ cut.coh <- summary(mela.cox <- coxph(Surv(survival_time, vital_status)~stage+age
 cut.ther <- summary(mela.cox.ther <- coxph(Surv(survival_time, vital_status)~stage+treatment+
                               S6+cohort,
                           data=cut.mela))
+cut.ther <- summary(mela.cox.ther <- coxph(Surv(survival_time, vital_status)~stage+treatment+
+                                               S6,
+                                           data=cut.mela))
 # Multivariate with therapy with radiation + immuno and radiation + interferon combined
 cut.ther1 <- summary(mela.cox.ther1 <- coxph(Surv(survival_time, vital_status)~stage+treatment1+
                                    S6+cohort,
                                data=cut.mela1))
+cut.ther1 <- summary(mela.cox.ther1 <- coxph(Surv(survival_time, vital_status)~stage+treatment1+
+                                                 S6,
+                                             data=cut.mela1))
 
 
 
@@ -1187,14 +1194,14 @@ wther <- ggplot(cut.ther.mod, aes(x=factor(var, levels=var.ord2), y=coef)) +
     ggtitle("") +
     ylab("log(HR)") + 
     scale_y_continuous(breaks=seq(-10,100,2)) +
-    coord_cartesian(ylim=c(-3.5,11), expand=TRUE) + 
+    coord_cartesian(ylim=c(-3.5,12), expand=TRUE) + 
     theme_bw() +
     theme(legend.position="none",
           axis.title.x=element_blank(),
           axis.title = element_text(size=13),
           axis.text = element_text(size=12)) +
     scale_x_discrete(labels=c("Stage\nII", "Stage\nIII", "Stage\nIV", "Immuno-\ntherapy", "Interferon",
-                              "No\ntreatment", "Radiation", "Radiation\n+ other", "Surgery","S6",
+                              "No\ntreatment", "Radiation", "Radiation\n+ other", "Surgery","S6\n(MMR)",
                               "SKCA\nBR", "SKCM\nTM")) +
     geom_hline(yintercept=0, linetype="dashed", color = "black") +
     annotate("text", x=1, y=-3.5, label=paste0("p=",round(cut.ther.mod$p[1], digits=3))) +
@@ -1205,12 +1212,12 @@ wther <- ggplot(cut.ther.mod, aes(x=factor(var, levels=var.ord2), y=coef)) +
     annotate("text", x=6, y=-3.5, label=paste0("p=",round(cut.ther.mod$p[6], digits=3))) +
     annotate("text", x=7, y=-3.5, label=paste0("p=",round(cut.ther.mod$p[7], digits=3))) +
     annotate("text", x=8, y=-3.5, label=paste0("p=",round(cut.ther.mod$p[8], digits=3))) +
-    annotate("text", x=9, y=-3.5, label=paste0("p=",round(cut.ther.mod$p[9], digits=3))) +
-    annotate("text", x=10, y=-3.5, label=paste0("p=",round(cut.ther.mod$p[10], digits=3))) +
-    annotate("text", x=11, y=-3.5, label=paste0("p=",round(cut.ther.mod$p[11], digits=3))) +
-    annotate("text", x=12, y=-3.5, label=paste0("p=",round(cut.ther.mod$p[12], digits=3)))
+    annotate("text", x=9, y=-3.5, label=paste0("p=",round(cut.ther.mod$p[9], digits=4))) +
+    annotate("text", x=10, y=-3.5, label=paste0("p=",round(cut.ther.mod$p[10], digits=3)))
+    #annotate("text", x=11, y=-3.5, label=paste0("p=",round(cut.ther.mod$p[11], digits=3))) +
+    #annotate("text", x=12, y=-3.5, label=paste0("p=",round(cut.ther.mod$p[12], digits=3)))
 
-pdf("./Figures/TCGA_ICGC_comb_survival.pdf", w=10, h=10)
+pdf("./Figures/TCGA_ICGC_comb_survival2.pdf", w=10, h=10)
 ggarrange(wother, wther,
           nrow=2,
           labels = c("a)", "b)"))

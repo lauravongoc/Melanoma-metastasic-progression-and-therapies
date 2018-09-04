@@ -131,7 +131,6 @@ melt.tp <- melt(trim.tp)
 colnames(melt.tp) <- c("PatientId", "Signature", "weight")
 melt.tp$weight <- sapply(melt.tp$weight, function(x) 100*x)
 
-
 # Plot: stacked barplot signatures
 pdf("./Figures/TCGA_SKCM_TP_mutsig.pdf", w=10, h=6)
 ggplot(melt.tp, aes(x=PatientId, y=weight, fill=Signature)) + 
@@ -207,7 +206,7 @@ dev.off()
 
 
 
-#--------- ~ S1 and S7 analysis: TP ---------
+#--------- ~ S1 vs S7 analysis: TP ---------
 sp1.7 <- as.matrix(weight.tp[,c(1, 7)])
 melt.sp1.7 <- melt(sp1.7)
 colnames(melt.sp1.7) <- c("PatientId", "Signature", "weight")
@@ -264,12 +263,12 @@ gap.barplot(means.tp$value, gap=c(20,55))
 
 save(means.tp, file="./Output/TCGA_SKCM_TP_mutsigs_means.RData")
 
-#--------- ~ Mean SKCM ---------
+
+#--------- ~ Mean contributions SKCM ---------
 means.oth <- rbind(means.oth.tp, means.oth.tm)
 means.oth$sample <- factor(means.oth$sample, levels=c("SKCM TP", "SKCM TM"))
 
-
-pdf("./Figures/TCGA_SKCM_mutsigs_avg_20.pdf", w=8, h=4)
+# First 20% contributions (pre-axis break)
 skcm.mutsigs <- ggplot(means.oth, aes(x=Signatures, y=value, fill=sample)) + 
     geom_bar(stat="identity", aes(fill=sample), position="dodge") +
     scale_fill_manual(values=c(colors3)) +
@@ -283,10 +282,8 @@ skcm.mutsigs <- ggplot(means.oth, aes(x=Signatures, y=value, fill=sample)) +
           axis.text = element_text(size=12),
           axis.title = element_text(size=13),
           legend.text = element_text(size=13))
-    #facet_wrap(~ sample, ncol=2)
-dev.off()
 
-pdf("./Figures/TCGA_SKCM_TP_mutsigs_avg_70.pdf", w=8, h=2)
+# 60-70% contributions (post-break)
 skcm.mutsigs.1 <- ggplot(means.oth, aes(x=Signatures, y=value, fill=sample)) + 
     geom_bar(stat="identity", aes(fill=sample), position="dodge") +
     scale_fill_manual(values=c(colors3)) +
@@ -303,7 +300,7 @@ skcm.mutsigs.1 <- ggplot(means.oth, aes(x=Signatures, y=value, fill=sample)) +
           axis.text.x = element_blank(),
           axis.text.y = element_text(size=12),
           axis.title.y = element_text(size=13))
-dev.off()
+
 
 pdf("./Figures/TCGA_SKCM_UVM_mutsigs_avg_2.pdf", w=10, h=5)
 skcm.gg <- ggarrange(skcm.mutsigs.1, skcm.mutsigs,
